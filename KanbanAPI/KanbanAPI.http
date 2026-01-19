@@ -1,0 +1,6 @@
+@KanbanAPI_HostAddress = http://localhost:5267
+
+GET {{KanbanAPI_HostAddress}}/
+Accept: application/json
+
+###
