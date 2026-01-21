@@ -15,5 +15,23 @@ namespace KanbanAPI.Data
 		public DbSet<Column> Columns { get; set; }
 		public DbSet<Card> Cards { get; set; }
 		public DbSet<BoardMember> BoardMembers { get; set; }
+
+		protected override void OnModelCreating(ModelBuilder builder)
+		{
+			base.OnModelCreating(builder);
+
+			builder.Entity<BoardMember>()
+				.HasKey(bm => new { bm.UserId, bm.BoardId });
+
+			builder.Entity<BoardMember>()
+				.HasOne(bm => bm.User)
+				.WithMany(u => u.Boards)
+				.HasForeignKey(bm => bm.UserId);
+
+			builder.Entity<BoardMember>()
+				.HasOne(bm => bm.Board)
+				.WithMany(b => b.Members)
+				.HasForeignKey(bm => bm.BoardId);
+		}
 	}
 }
