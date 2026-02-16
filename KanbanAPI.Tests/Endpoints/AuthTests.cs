@@ -63,5 +63,54 @@ namespace KanbanAPI.Tests.Endpoints
 			// Assert
 			Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 		}
-    }
+
+		[Fact]
+		public async Task Login_WithValidCredentials_ReturnsOkWithToken()
+		{
+			// Arrange
+			var email = "login@example.com";
+			var password = "LoginTest123!@#";
+
+			var registrationData = new { email, password };
+			var registerRes = await _client.PostAsJsonAsync("/register", registrationData);
+
+			var loginData = new { email, password };
+
+			// Act
+			var response = await _client.PostAsJsonAsync("/login", loginData);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+			var content = await response.Content.ReadFromJsonAsync<LoginResponse>();
+			Assert.NotNull(content);
+			Assert.NotNull(content.AccessToken);
+		}
+
+		[Fact]
+		public async Task Login_WithInvalidCredentials_ReturnsUnauthorized()
+		{
+			// Arrange
+			var email = "valid@example.com";
+			var password = "ValidPassword123!@#";
+
+			var registrationData = new { email, password };
+			await _client.PostAsJsonAsync("/register", registrationData);
+
+			var loginData = new { email, password = "WrongPassword123!@#" };
+
+			// Act
+			var response = await _client.PostAsJsonAsync("/login", loginData);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+		}
+
+		private class LoginResponse
+		{
+			public string AccessToken { get; set; } = string.Empty;
+			public string TokenType { get; set; } = string.Empty;
+			public int ExpiresIn { get; set; }
+		}
+	}
 }
