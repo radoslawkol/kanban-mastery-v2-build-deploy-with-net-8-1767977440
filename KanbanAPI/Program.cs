@@ -2,6 +2,7 @@ using KanbanAPI.Data;
 using KanbanAPI.Models;
 using KanbanAPI.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IBoardService, BoardService>();
 
@@ -29,6 +32,16 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapIdentityApi<ApplicationUser>();
+
+app.MapGet("/api/users/me", async (ClaimsPrincipal user, ApplicationDbContext db) =>
+{
+	var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+	var appUser = await db.Users.FindAsync(userId);
+    if (appUser is null)
+        return Results.Unauthorized();
+
+	return TypedResults.Ok(new { appUser.Id, appUser.UserName, appUser.Email });
+}).RequireAuthorization();
 
 app.Run();
 
