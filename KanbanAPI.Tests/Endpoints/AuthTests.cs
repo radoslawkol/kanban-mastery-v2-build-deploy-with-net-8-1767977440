@@ -114,19 +114,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var email = "profile@example.com";
 			var password = "ProfileTest123!@#";
 
-			var registrationData = new { email, password };
-			var registerResponse = await _client.PostAsJsonAsync("/register", registrationData);
-
-			var loginData = new { email, password };
-			var loginResponse = await _client.PostAsJsonAsync("/login", loginData);
-
-			var loginContent = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
-
-			Assert.NotNull(loginContent?.AccessToken);
-
-			var client = _factory.CreateClient();
-			client.DefaultRequestHeaders.Authorization = 
-				new AuthenticationHeaderValue("Bearer", loginContent?.AccessToken);
+			var client = await CreateAuthenticatedClientAsync(email, password);
 
 			// Act
 			var response = await client.GetAsync("/api/users/me");
@@ -148,6 +136,22 @@ namespace KanbanAPI.Tests.Endpoints
 
 			// Assert
 			Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+		}
+
+		private async Task<HttpClient> CreateAuthenticatedClientAsync(string email, string password)
+		{
+			var registrationData = new { email, password };
+			await _client.PostAsJsonAsync("/register", registrationData);
+
+			var loginData = new { email, password };
+			var loginResponse = await _client.PostAsJsonAsync("/login", loginData);
+			var loginContent = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+
+			var client = _factory.CreateClient();
+			client.DefaultRequestHeaders.Authorization =
+				new AuthenticationHeaderValue("Bearer", loginContent?.AccessToken);
+
+			return client;
 		}
 
 		private class UserProfile
