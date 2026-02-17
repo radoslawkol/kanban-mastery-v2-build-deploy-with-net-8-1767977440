@@ -28,4 +28,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.MapIdentityApi<ApplicationUser>();
+
 app.Run();
+
+public partial class Program { }
