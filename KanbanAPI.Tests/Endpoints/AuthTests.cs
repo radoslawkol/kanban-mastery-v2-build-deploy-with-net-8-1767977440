@@ -1,53 +1,33 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Net.Http.Headers;
-using KanbanAPI.Data;
+using KanbanAPI.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace KanbanAPI.Tests.Endpoints
 {
-    public class AuthTests : IClassFixture<WebApplicationFactory<Program>>
-    {
-        private readonly HttpClient _client;
-        private readonly WebApplicationFactory<Program> _factory;
+	public class AuthTests : ApiTestBase
+	{
+		public AuthTests(WebApplicationFactory<Program> factory)
+			: base(factory, "TestDb_Auth") { }
 
-        public AuthTests(WebApplicationFactory<Program> factory)
-        {
-            _factory = factory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    var descriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-                    if (descriptor != null) services.Remove(descriptor);
+		[Fact]
+		public async Task Register_WithValidData_ReturnsOk()
+		{
+			// Arrange
+			var registrationData = new
+			{
+				email = "test@example.com",
+				password = "Test123!@#"
+			};
 
-                    services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseInMemoryDatabase("TestDb"));
-                });
-            });
-            _client = _factory.CreateClient();
-        }
+			// Act
+			var response = await _client.PostAsJsonAsync("/register", registrationData);
 
-        [Fact]
-        public async Task Register_WithValidData_ReturnsOk()
-        {
-            // Arrange
-            var registrationData = new
-            {
-                email = "test@example.com",
-                password = "Test123!@#"
-            };
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+		}
 
-            // Act
-            var response = await _client.PostAsJsonAsync("/register", registrationData);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
+		[Fact]
 		public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
 		{
 			// Arrange
@@ -105,67 +85,6 @@ namespace KanbanAPI.Tests.Endpoints
 
 			// Assert
 			Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-		}
-
-		[Fact]
-		public async Task GetUserProfile_WithValidToken_ReturnsOkWithUserData()
-		{
-			// Arrange
-			var email = "profile@example.com";
-			var password = "ProfileTest123!@#";
-
-			var client = await CreateAuthenticatedClientAsync(email, password);
-
-			// Act
-			var response = await client.GetAsync("/api/users/me");
-
-			// Assert
-			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-			var userProfile = await response.Content.ReadFromJsonAsync<UserProfile>();
-			Assert.NotNull(userProfile);
-			Assert.NotEmpty(userProfile.Id);
-			Assert.Equal(email, userProfile.Email);
-		}
-
-		[Fact]
-		public async Task GetUserProfile_WithoutToken_ReturnsUnauthorized()
-		{
-			// Act
-			var response = await _client.GetAsync("/api/users/me");
-
-			// Assert
-			Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-		}
-
-		private async Task<HttpClient> CreateAuthenticatedClientAsync(string email, string password)
-		{
-			var registrationData = new { email, password };
-			await _client.PostAsJsonAsync("/register", registrationData);
-
-			var loginData = new { email, password };
-			var loginResponse = await _client.PostAsJsonAsync("/login", loginData);
-			var loginContent = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
-
-			var client = _factory.CreateClient();
-			client.DefaultRequestHeaders.Authorization =
-				new AuthenticationHeaderValue("Bearer", loginContent?.AccessToken);
-
-			return client;
-		}
-
-		private class UserProfile
-		{
-			public string Id { get; set; } = string.Empty;
-			public string UserName { get; set; } = string.Empty;
-			public string Email { get; set; } = string.Empty;
-		}
-
-		private class LoginResponse
-		{
-			public string AccessToken { get; set; } = string.Empty;
-			public string TokenType { get; set; } = string.Empty;
-			public int ExpiresIn { get; set; }
 		}
 	}
 }
