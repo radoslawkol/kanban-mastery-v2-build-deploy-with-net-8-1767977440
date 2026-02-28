@@ -14,6 +14,7 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBoardService, BoardService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -33,10 +34,15 @@ app.UseHttpsRedirection();
 
 app.MapIdentityApi<ApplicationUser>();
 
-app.MapGet("/api/users/me", async (ClaimsPrincipal user, ApplicationDbContext db) =>
+app.MapGet("/api/users/me", async (ClaimsPrincipal user, IUserService userService) =>
 {
 	var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-	var appUser = await db.Users.FindAsync(userId);
+
+    if (string.IsNullOrEmpty(userId))
+        return Results.Unauthorized();
+
+    var appUser = await userService.GetUserProfileAsync(userId);
+
     if (appUser is null)
         return Results.Unauthorized();
 
