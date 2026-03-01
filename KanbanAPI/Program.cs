@@ -1,4 +1,5 @@
 using KanbanAPI.Data;
+using KanbanAPI.DTOs;
 using KanbanAPI.Models;
 using KanbanAPI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,18 @@ app.MapGet("/api/users/me", async (ClaimsPrincipal user, IUserService userServic
         return Results.Unauthorized();
 
 	return TypedResults.Ok(new { appUser.Id, appUser.UserName, appUser.Email });
+}).RequireAuthorization();
+
+app.MapPost("/api/boards", async (CreateBoardRequest createBoardRequest, HttpContext httpContext, IBoardService boardService) =>
+{
+	var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+	if (string.IsNullOrEmpty(userId))
+		return Results.Unauthorized();
+
+	var board = await boardService.CreateBoardAsync(createBoardRequest.BoardName, userId);
+
+	return TypedResults.Ok(board);
 }).RequireAuthorization();
 
 app.Run();
