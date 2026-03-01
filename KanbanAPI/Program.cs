@@ -52,14 +52,24 @@ app.MapGet("/api/users/me", async (ClaimsPrincipal user, IUserService userServic
 
 app.MapPost("/api/boards", async (CreateBoardRequest createBoardRequest, HttpContext httpContext, IBoardService boardService) =>
 {
-	var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    try
+    {
+		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-	if (string.IsNullOrEmpty(userId))
-		return Results.Unauthorized();
+		if (string.IsNullOrEmpty(userId))
+			return Results.Unauthorized();
 
-	var board = await boardService.CreateBoardAsync(createBoardRequest.BoardName, userId);
+		var board = await boardService.CreateBoardAsync(createBoardRequest.BoardName, userId);
 
-	return TypedResults.Ok(board);
+		var createBoardResponse = new CreateBoardResponse(board.Id, board.Name);
+
+		return TypedResults.Created($"/api/boards/{board.Id}", createBoardResponse);
+	}
+	catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+	}
+	
 }).RequireAuthorization();
 
 app.Run();
