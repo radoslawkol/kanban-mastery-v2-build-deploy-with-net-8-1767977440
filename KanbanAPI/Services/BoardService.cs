@@ -52,6 +52,9 @@ namespace KanbanAPI.Services
 			if (string.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("Board name cannot be empty or whitespace.", nameof(name));
 
+			if (name.Length > 100)
+				throw new ArgumentException("Board name cannot be longer than 100 characters.", nameof(name));
+
 			var board = new Board
 			{
 				Id = Guid.NewGuid(),
