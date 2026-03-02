@@ -1,7 +1,10 @@
+using KanbanAPI.Authorization.Handlers;
+using KanbanAPI.Authorization.Requirements;
 using KanbanAPI.Data;
 using KanbanAPI.DTOs;
 using KanbanAPI.Models;
 using KanbanAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -13,7 +16,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, IsBoardOwnerHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+	options.AddPolicy("IsBoardOwner", policy =>
+	policy.Requirements.Add(new IsBoardOwnerRequirement()));
+});
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBoardService, BoardService>();
