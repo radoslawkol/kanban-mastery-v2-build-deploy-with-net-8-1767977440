@@ -358,6 +358,94 @@ namespace KanbanAPI.Tests.Services
 
 		#endregion
 
+		#region AddMemberAsync Tests
+
+		[Fact]
+		public async Task AddMemberAsync_WhenOwnerAddsValidUser_ShouldAddMember()
+		{
+			// Arrange
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var thirdUserId = "third-user-id";
+			_context.Users.Add(new ApplicationUser { Id = thirdUserId, UserName = "thirduser" });
+			await _context.SaveChangesAsync();
+
+			// Act
+			var result = await _boardService.AddMemberAsync(board.Id, thirdUserId, BoardRole.Member, _testUserId);
+
+			// Assert
+			Assert.True(result);
+
+			var addedMember = await _context.BoardMembers
+				.FirstOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == thirdUserId);
+			Assert.NotNull(addedMember);
+			Assert.Equal(BoardRole.Member, addedMember.Role);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserIsNotOwner_ShouldThrowForbiddenException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
+
+			await Assert.ThrowsAsync<ForbiddenException>(
+				() => _boardService.AddMemberAsync(board.Id, _otherUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserToAddDoesNotExist_ShouldThrowNotFoundException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var nonExistentUserId = "non-existent-user-id";
+
+			await Assert.ThrowsAsync<NotFoundException>(
+				() => _boardService.AddMemberAsync(board.Id, nonExistentUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserIsAlreadyMember_ShouldThrowInvalidOperationException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			await AddMemberToBoard(board.Id, _otherUserId, BoardRole.Member);
+
+			await Assert.ThrowsAsync<InvalidOperationException>(
+				() => _boardService.AddMemberAsync(board.Id, _otherUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_CanAddMemberWithOwnerRole()
+		{
+			// Arrange
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var thirdUserId = "third-user-id";
+			_context.Users.Add(new ApplicationUser { Id = thirdUserId, UserName = "thirduser" });
+			await _context.SaveChangesAsync();
+
+			// Act
+			var result = await _boardService.AddMemberAsync(board.Id, thirdUserId, BoardRole.Owner, _testUserId);
+
+			// Assert
+			Assert.True(result);
+
+			var addedMember = await _context.BoardMembers
+				.FirstOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == thirdUserId);
+			Assert.NotNull(addedMember);
+			Assert.Equal(BoardRole.Owner, addedMember.Role);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenOwnerIsNotMemberOfBoard_ShouldThrowForbiddenException()
+		{
+			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
+
+			await Assert.ThrowsAsync<ForbiddenException>(
+				() => _boardService.AddMemberAsync(board.Id, _testUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		#endregion
+
 		#region Helper Methods
 
 		private async Task<Board> CreateTestBoardWithMember(string userId, BoardRole role)
