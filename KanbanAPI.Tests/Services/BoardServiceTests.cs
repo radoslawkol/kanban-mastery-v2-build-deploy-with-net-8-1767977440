@@ -99,11 +99,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetByIdAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task GetByIdAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetByIdAsync(board.Id, _testUserId)
 			);
 		}
@@ -141,11 +141,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetUserBoardsAsync_WhenUserIdDoesNotMatchCurrentUserId_ShouldThrowUnauthorizedException()
+		public async Task GetUserBoardsAsync_WhenUserIdDoesNotMatchCurrentUserId_ShouldThrowForbiddenException()
 		{
 			await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetUserBoardsAsync(_otherUserId, _testUserId)
 			);
 		}
@@ -174,23 +174,23 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task UpdateAsync_WhenUserIsMemberButNotOwner_ShouldThrowUnauthorizedException()
+		public async Task UpdateAsync_WhenUserIsMemberButNotOwner_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
 			var newName = "Updated Board Name";
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.UpdateAsync(board.Id, newName, _testUserId)
 			);
 		}
 
 		[Fact]
-		public async Task UpdateAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task UpdateAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 			var newName = "Updated Board Name";
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.UpdateAsync(board.Id, newName, _testUserId)
 			);
 		}
@@ -233,21 +233,21 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task DeleteAsync_WhenUserIsMemberButNotOwner_ShouldThrowUnauthorizedException()
+		public async Task DeleteAsync_WhenUserIsMemberButNotOwner_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.DeleteAsync(board.Id, _testUserId)
 			);
 		}
 
 		[Fact]
-		public async Task DeleteAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task DeleteAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.DeleteAsync(board.Id, _testUserId)
 			);
 		}
@@ -347,11 +347,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetBoardMembersAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task GetBoardMembersAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetBoardMembersAsync(board.Id, _testUserId)
 			);
 		}

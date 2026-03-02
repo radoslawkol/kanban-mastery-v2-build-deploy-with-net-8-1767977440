@@ -12,5 +12,6 @@ namespace KanbanAPI.Services
 		Task<bool> IsUserBoardMemberAsync(Guid boardId, string userId);
 		Task<bool> IsUserBoardOwnerAsync(Guid boardId, string userId);
 		Task<IEnumerable<BoardMember>> GetBoardMembersAsync(Guid boardId, string currentUserId);
+		Task<bool> AddMemberAsync(Guid boardId, string userIdToAdd, BoardRole role, string currentUserId);
 	}
 }
