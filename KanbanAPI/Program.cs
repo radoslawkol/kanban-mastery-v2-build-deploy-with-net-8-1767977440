@@ -2,6 +2,7 @@ using KanbanAPI.Authorization.Handlers;
 using KanbanAPI.Authorization.Requirements;
 using KanbanAPI.Data;
 using KanbanAPI.DTOs;
+using KanbanAPI.Exceptions;
 using KanbanAPI.Models;
 using KanbanAPI.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -80,6 +81,38 @@ app.MapPost("/api/boards", async (CreateBoardRequest createBoardRequest, HttpCon
 	}
 	
 }).RequireAuthorization();
+
+app.MapPost("/api/boards/{boardId}/members", async (
+	Guid boardId, AddBoardMemberRequest addBoardMemberRequest, HttpContext httpContext, IBoardService boardService) =>
+{
+	try
+	{
+		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+		if (string.IsNullOrEmpty(userId))
+			return Results.Unauthorized();
+
+		await boardService.AddMemberAsync(boardId, addBoardMemberRequest.UserId, BoardRole.Member, userId);
+
+		return Results.Ok(new { message = "Member added successfully" });
+	}
+	catch (ForbiddenException ex)
+	{
+		return Results.Forbid();
+	}
+	catch (NotFoundException ex)
+	{
+		return Results.NotFound(new { message = ex.Message });
+	}
+	catch (InvalidOperationException ex)
+	{
+		return Results.BadRequest(new { message = ex.Message });
+	}
+	catch (ArgumentException ex)
+	{
+		return Results.BadRequest(new { message = ex.Message });
+	}	
+}).RequireAuthorization("IsBoardOwner");
 
 app.Run();
 
