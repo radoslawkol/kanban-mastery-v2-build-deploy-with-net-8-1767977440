@@ -46,5 +46,11 @@ namespace KanbanAPI.Tests.Helpers
 
 			return client;
 		}
+
+		protected ApplicationDbContext CreateDbContext()
+		{
+			var scope = _factory.Services.CreateScope();
+			return scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+		}
 	}
 }

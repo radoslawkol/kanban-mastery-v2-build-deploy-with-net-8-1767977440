@@ -33,16 +33,16 @@ namespace KanbanAPI.Tests.Services
 			_context.Dispose();
 		}
 
-		#region CreateAsync Tests
+		#region CreateBoardAsync Tests
 
 		[Fact]
-		public async Task CreateAsync_ShouldCreateBoard()
+		public async Task CreateBoardAsync_ShouldCreateBoard()
 		{
 			// Arrange
 			var boardName = "Test Board";
 
 			// Act
-			var result = await _boardService.CreateAsync(boardName, _testUserId);
+			var result = await _boardService.CreateBoardAsync(boardName, _testUserId);
 
 			// Assert
 			Assert.NotNull(result);
@@ -55,11 +55,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task CreateAsync_ShouldAssignCreatorAsOwner()
+		public async Task CreateBoardAsync_ShouldAssignCreatorAsOwner()
 		{
 			// Arrange
 			var boardName = "Owner Board";
-			var board = await _boardService.CreateAsync(boardName, _testUserId);
+			var board = await _boardService.CreateBoardAsync(boardName, _testUserId);
 
 			// Act
 			var membership = await _context.BoardMembers
@@ -71,12 +71,12 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task CreateAsync_WithEmptyName_ShouldThrowArgumentException()
+		public async Task CreateBoardAsync_WithEmptyName_ShouldThrowArgumentException()
 		{
 			var boardName = "";
 
 			await Assert.ThrowsAsync<ArgumentException>(
-				(() => _boardService.CreateAsync(boardName, _testUserId)));
+				(() => _boardService.CreateBoardAsync(boardName, _testUserId)));
 		}
 
 		#endregion

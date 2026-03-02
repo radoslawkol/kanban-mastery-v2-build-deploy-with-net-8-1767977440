@@ -47,18 +47,19 @@ namespace KanbanAPI.Services
 				.ToListAsync();
 		}
 
-		public async Task<Board> CreateAsync(string name, string currentUserId)
+		public async Task<Board> CreateBoardAsync(string name, string currentUserId)
 		{
 			if (string.IsNullOrWhiteSpace(name))
 				throw new ArgumentException("Board name cannot be empty or whitespace.", nameof(name));
+
+			if (name.Length > 100)
+				throw new ArgumentException("Board name cannot be longer than 100 characters.", nameof(name));
 
 			var board = new Board
 			{
 				Id = Guid.NewGuid(),
 				Name = name,
 			};
-
-			_context.Boards.Add(board);
 
 			var boardMember = new BoardMember
 			{
@@ -67,6 +68,7 @@ namespace KanbanAPI.Services
 				Role = BoardRole.Owner,
 			};
 
+			_context.Boards.Add(board);
 			_context.BoardMembers.Add(boardMember);
 			await _context.SaveChangesAsync();
 
