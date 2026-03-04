@@ -135,7 +135,6 @@ namespace KanbanAPI.Tests.Endpoints
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
 			// Verify member was added to database
-			db.ChangeTracker.Clear();
 			var memberRecord = await db.BoardMembers
 				.SingleOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == memberUser.Id);
 			Assert.NotNull(memberRecord);

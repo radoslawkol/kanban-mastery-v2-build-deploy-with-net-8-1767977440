@@ -83,7 +83,7 @@ app.MapPost("/api/boards", async (CreateBoardRequest createBoardRequest, HttpCon
 }).RequireAuthorization();
 
 app.MapPost("/api/boards/{boardId}/members", async (
-	Guid boardId, AddBoardMemberRequest addBoardMemberRequest, HttpContext httpContext, IBoardService boardService) =>
+	Guid boardId, AddBoardMemberRequest addBoardMemberRequest, HttpContext httpContext, IBoardService boardService, IAuthorizationService authorizationService) =>
 {
 	try
 	{
@@ -91,6 +91,10 @@ app.MapPost("/api/boards/{boardId}/members", async (
 
 		if (string.IsNullOrEmpty(userId))
 			return Results.Unauthorized();
+
+		var authorizationResult = await authorizationService.AuthorizeAsync(httpContext.User, boardId, "IsBoardOwner");
+		if (!authorizationResult.Succeeded)
+			return Results.Forbid();
 
 		await boardService.AddMemberAsync(boardId, addBoardMemberRequest.UserId, BoardRole.Member, userId);
 
@@ -112,7 +116,7 @@ app.MapPost("/api/boards/{boardId}/members", async (
 	{
 		return Results.BadRequest(new { message = ex.Message });
 	}	
-}).RequireAuthorization("IsBoardOwner");
+}).RequireAuthorization();
 
 app.Run();
 

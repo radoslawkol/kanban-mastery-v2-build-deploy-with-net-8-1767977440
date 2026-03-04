@@ -22,9 +22,6 @@ namespace KanbanAPI.Authorization.Handlers
 			Guid boardId)
 		{
 			var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-			
-			if (string.IsNullOrEmpty(userId))
-				return;
 
 			var isOwner = await _db.BoardMembers
 				.AnyAsync(m => m.BoardId == boardId && m.UserId == userId && m.Role == BoardRole.Owner);
