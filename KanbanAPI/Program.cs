@@ -18,11 +18,14 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IAuthorizationHandler, IsBoardOwnerHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, IsBoardMemberHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
 	options.AddPolicy("IsBoardOwner", policy =>
 	policy.Requirements.Add(new IsBoardOwnerRequirement()));
+	options.AddPolicy("IsBoardMember", policy =>
+	policy.Requirements.Add(new IsBoardMemberRequirement()));
 });
 
 builder.Services.AddScoped<IUserService, UserService>();
