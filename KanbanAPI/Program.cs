@@ -140,7 +140,22 @@ app.MapGet("/api/boards/{boardId}",
 		if (board is null)
 			return Results.NotFound(new { message = "Board not found" });
 
-		return TypedResults.Ok(new { board.Id, board.Name });
+		var response = new BoardDetailResponse(
+			board.Id,
+			board.Name,
+			board.Columns
+				.OrderBy(c => c.Order)
+				.Select(c => new ColumnResponse(
+					c.Id,
+					c.Name,
+					c.Order,
+					c.Cards
+						.OrderBy(card => card.Order)
+						.Select(card => new CardResponse(card.Id, card.Title, card.Description, card.Order))
+				))
+		);
+
+		return TypedResults.Ok(response);
 	}
 	catch (ForbiddenException ex)
 	{
