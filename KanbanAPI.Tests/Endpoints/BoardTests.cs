@@ -103,5 +103,84 @@ namespace KanbanAPI.Tests.Endpoints
 			// Assert
 			Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 		}
+
+		[Fact]
+		public async Task AddMember_ByOwner_ReturnsOkAndAddsMember()
+		{
+			// Arrange
+			var ownerEmail = "owner@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+			
+			// Create a board as owner
+			var createBoardRequest = new CreateBoardRequest("Test Board");
+			var createResponse = await ownerClient.PostAsJsonAsync("/api/boards/", createBoardRequest);
+			var board = await createResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			// Register a new user to add as member
+			var memberEmail = "member@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			// Get the member's user ID from database
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(memberUser);
+
+			var addMemberRequest = new AddBoardMemberRequest(memberUser.Id);
+
+			// Act
+			var response = await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addMemberRequest);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+			// Verify member was added to database
+			var memberRecord = await db.BoardMembers
+				.SingleOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == memberUser.Id);
+			Assert.NotNull(memberRecord);
+			Assert.Equal(BoardRole.Member, memberRecord.Role);
+		}
+
+		[Fact]
+		public async Task AddMember_ByNonOwner_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerEmail = "owner2@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+			
+			// Create a board as owner
+			var createBoardRequest = new CreateBoardRequest("Test Board 2");
+			var createResponse = await ownerClient.PostAsJsonAsync("/api/boards/", createBoardRequest);
+			var board = await createResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			// Register two other users: one to add as member, one as non-owner
+			var memberEmail = "member2@example.com";
+			var nonOwnerEmail = "nonowner@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+			await _client.PostAsJsonAsync("/register", new { email = nonOwnerEmail, password = "Test@123" });
+
+			// Get user IDs from database
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			var nonOwnerUser = await db.Users.SingleOrDefaultAsync(u => u.Email == nonOwnerEmail);
+			Assert.NotNull(memberUser);
+			Assert.NotNull(nonOwnerUser);
+
+			// Add non-owner as a regular member to the board
+			var addNonOwnerRequest = new AddBoardMemberRequest(nonOwnerUser.Id);
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addNonOwnerRequest);
+
+			// Create authenticated client for non-owner
+			var nonOwnerClient = await CreateAuthenticatedClientAsync(nonOwnerEmail, "Test@123");
+
+			var addMemberRequest = new AddBoardMemberRequest(memberUser.Id);
+
+			// Act
+			var response = await nonOwnerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addMemberRequest);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
 	}
 }

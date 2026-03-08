@@ -99,11 +99,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetByIdAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task GetByIdAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetByIdAsync(board.Id, _testUserId)
 			);
 		}
@@ -141,11 +141,11 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetUserBoardsAsync_WhenUserIdDoesNotMatchCurrentUserId_ShouldThrowUnauthorizedException()
+		public async Task GetUserBoardsAsync_WhenUserIdDoesNotMatchCurrentUserId_ShouldThrowForbiddenException()
 		{
 			await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetUserBoardsAsync(_otherUserId, _testUserId)
 			);
 		}
@@ -174,23 +174,23 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task UpdateAsync_WhenUserIsMemberButNotOwner_ShouldThrowUnauthorizedException()
+		public async Task UpdateAsync_WhenUserIsMemberButNotOwner_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
 			var newName = "Updated Board Name";
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.UpdateAsync(board.Id, newName, _testUserId)
 			);
 		}
 
 		[Fact]
-		public async Task UpdateAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task UpdateAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 			var newName = "Updated Board Name";
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.UpdateAsync(board.Id, newName, _testUserId)
 			);
 		}
@@ -233,21 +233,21 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task DeleteAsync_WhenUserIsMemberButNotOwner_ShouldThrowUnauthorizedException()
+		public async Task DeleteAsync_WhenUserIsMemberButNotOwner_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.DeleteAsync(board.Id, _testUserId)
 			);
 		}
 
 		[Fact]
-		public async Task DeleteAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task DeleteAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.DeleteAsync(board.Id, _testUserId)
 			);
 		}
@@ -347,12 +347,100 @@ namespace KanbanAPI.Tests.Services
 		}
 
 		[Fact]
-		public async Task GetBoardMembersAsync_WhenUserIsNotMember_ShouldThrowUnauthorizedException()
+		public async Task GetBoardMembersAsync_WhenUserIsNotMember_ShouldThrowForbiddenException()
 		{
 			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
 
-			await Assert.ThrowsAsync<UnauthorizedException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetBoardMembersAsync(board.Id, _testUserId)
+			);
+		}
+
+		#endregion
+
+		#region AddMemberAsync Tests
+
+		[Fact]
+		public async Task AddMemberAsync_WhenOwnerAddsValidUser_ShouldAddMember()
+		{
+			// Arrange
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var thirdUserId = "third-user-id";
+			_context.Users.Add(new ApplicationUser { Id = thirdUserId, UserName = "thirduser" });
+			await _context.SaveChangesAsync();
+
+			// Act
+			var result = await _boardService.AddMemberAsync(board.Id, thirdUserId, BoardRole.Member, _testUserId);
+
+			// Assert
+			Assert.True(result);
+
+			var addedMember = await _context.BoardMembers
+				.FirstOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == thirdUserId);
+			Assert.NotNull(addedMember);
+			Assert.Equal(BoardRole.Member, addedMember.Role);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserIsNotOwner_ShouldThrowForbiddenException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Member);
+
+			await Assert.ThrowsAsync<ForbiddenException>(
+				() => _boardService.AddMemberAsync(board.Id, _otherUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserToAddDoesNotExist_ShouldThrowNotFoundException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var nonExistentUserId = "non-existent-user-id";
+
+			await Assert.ThrowsAsync<NotFoundException>(
+				() => _boardService.AddMemberAsync(board.Id, nonExistentUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenUserIsAlreadyMember_ShouldThrowInvalidOperationException()
+		{
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			await AddMemberToBoard(board.Id, _otherUserId, BoardRole.Member);
+
+			await Assert.ThrowsAsync<InvalidOperationException>(
+				() => _boardService.AddMemberAsync(board.Id, _otherUserId, BoardRole.Member, _testUserId)
+			);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_CanAddMemberWithOwnerRole()
+		{
+			// Arrange
+			var board = await CreateTestBoardWithMember(_testUserId, BoardRole.Owner);
+			var thirdUserId = "third-user-id";
+			_context.Users.Add(new ApplicationUser { Id = thirdUserId, UserName = "thirduser" });
+			await _context.SaveChangesAsync();
+
+			// Act
+			var result = await _boardService.AddMemberAsync(board.Id, thirdUserId, BoardRole.Owner, _testUserId);
+
+			// Assert
+			Assert.True(result);
+
+			var addedMember = await _context.BoardMembers
+				.FirstOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == thirdUserId);
+			Assert.NotNull(addedMember);
+			Assert.Equal(BoardRole.Owner, addedMember.Role);
+		}
+
+		[Fact]
+		public async Task AddMemberAsync_WhenOwnerIsNotMemberOfBoard_ShouldThrowForbiddenException()
+		{
+			var board = await CreateTestBoardWithMember(_otherUserId, BoardRole.Owner);
+
+			await Assert.ThrowsAsync<ForbiddenException>(
+				() => _boardService.AddMemberAsync(board.Id, _testUserId, BoardRole.Member, _testUserId)
 			);
 		}
 

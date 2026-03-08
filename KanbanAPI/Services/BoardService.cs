@@ -27,7 +27,7 @@ namespace KanbanAPI.Services
 
 			var isMember = await IsUserBoardMemberAsync(id, currentUserId);
 			if (!isMember)
-				throw new UnauthorizedException("You are not a member of this board.");
+				throw new ForbiddenException("You are not a member of this board.");
 
 			return board;
 		}
@@ -35,7 +35,7 @@ namespace KanbanAPI.Services
 		public async Task<IEnumerable<Board>> GetUserBoardsAsync(string userId, string currentUserId)
 		{
 			if (userId != currentUserId)
-				throw new UnauthorizedException("You can only view your own boards.");
+				throw new ForbiddenException("You can only view your own boards.");
 
 			return await _context.BoardMembers
 				.Where(bm => bm.UserId == userId)
@@ -82,7 +82,7 @@ namespace KanbanAPI.Services
 
 			var isOwner = await IsUserBoardOwnerAsync(id, currentUserId);
 			if (!isOwner)
-				throw new UnauthorizedException("Only board owners can update the board.");
+				throw new ForbiddenException("Only board owners can update the board.");
 
 			var board = await _context.Boards.FindAsync(id);
 			if (board is null)
@@ -99,7 +99,7 @@ namespace KanbanAPI.Services
 		{
 			var isOwner = await IsUserBoardOwnerAsync(id, currentUserId);
 			if (!isOwner)
-				throw new UnauthorizedException("Only board owners can delete the board.");
+				throw new ForbiddenException("Only board owners can delete the board.");
 
 			var board = await _context.Boards.FindAsync(id);
 			if (board is null)
@@ -127,12 +127,44 @@ namespace KanbanAPI.Services
 		{
 			var isMember = await IsUserBoardMemberAsync(boardId, currentUserId);
 			if (!isMember)
-				throw new UnauthorizedException("You are not a member of this board.");
+				throw new ForbiddenException("You are not a member of this board.");
 
 			return await _context.BoardMembers
 				.Where(bm => bm.BoardId == boardId)
 				.Include(bm => bm.User)
 				.ToListAsync();
+		}
+		public async Task<bool> AddMemberAsync(Guid boardId, string userIdToAdd, BoardRole role, string currentUserId)
+		{
+			var isOwner = await IsUserBoardOwnerAsync(boardId, currentUserId);
+			if (!isOwner)
+				throw new ForbiddenException("Only board owners can add members.");
+
+			var boardExists = await _context.Boards.AnyAsync(b => b.Id == boardId);
+			if (!boardExists)
+				throw new NotFoundException("Board not found.");
+
+			var userExists = await _context.Users.AnyAsync(u => u.Id == userIdToAdd);
+			if (!userExists)
+				throw new NotFoundException("User not found.");
+
+			var existingMember = await _context.BoardMembers
+				.AnyAsync(bm => bm.BoardId == boardId && bm.UserId == userIdToAdd);
+
+			if (existingMember)
+				throw new InvalidOperationException("User is already a member of this board.");
+
+			var boardMember = new BoardMember
+			{
+				BoardId = boardId,
+				UserId = userIdToAdd,
+				Role = role,
+			};
+
+			_context.BoardMembers.Add(boardMember);
+			await _context.SaveChangesAsync();
+
+			return true;
 		}
 	}
 }
