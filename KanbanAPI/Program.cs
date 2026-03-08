@@ -121,6 +121,33 @@ app.MapPost("/api/boards/{boardId}/members", async (
 	}	
 }).RequireAuthorization();
 
+app.MapGet("/api/boards/{boardId}",
+	async (Guid boardId, HttpContext httpContext, IBoardService boardService, IAuthorizationService authorizationService) =>
+{
+	try
+	{
+		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+		if (string.IsNullOrEmpty(userId))
+			return Results.Unauthorized();
+
+		var authorizationResult = await authorizationService.AuthorizeAsync(httpContext.User, boardId, "IsBoardMember");
+		if (!authorizationResult.Succeeded)
+			return Results.Forbid();
+
+		var board = await boardService.GetByIdAsync(boardId, userId);
+
+		if (board is null)
+			return Results.NotFound(new { message = "Board not found" });
+
+		return TypedResults.Ok(new { board.Id, board.Name });
+	}
+	catch (ForbiddenException ex)
+	{
+		return Results.Forbid();
+	}
+}).RequireAuthorization();
+
 app.Run();
 
 public partial class Program { }
