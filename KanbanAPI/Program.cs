@@ -18,11 +18,14 @@ builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddScoped<IAuthorizationHandler, IsBoardOwnerHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, IsBoardMemberHandler>();
 
 builder.Services.AddAuthorization(options =>
 {
 	options.AddPolicy("IsBoardOwner", policy =>
 	policy.Requirements.Add(new IsBoardOwnerRequirement()));
+	options.AddPolicy("IsBoardMember", policy =>
+	policy.Requirements.Add(new IsBoardMemberRequirement()));
 });
 
 builder.Services.AddScoped<IUserService, UserService>();
@@ -116,6 +119,48 @@ app.MapPost("/api/boards/{boardId}/members", async (
 	{
 		return Results.BadRequest(new { message = ex.Message });
 	}	
+}).RequireAuthorization();
+
+app.MapGet("/api/boards/{boardId}",
+	async (Guid boardId, HttpContext httpContext, IBoardService boardService, IAuthorizationService authorizationService) =>
+{
+	try
+	{
+		var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+		if (string.IsNullOrEmpty(userId))
+			return Results.Unauthorized();
+
+		var authorizationResult = await authorizationService.AuthorizeAsync(httpContext.User, boardId, "IsBoardMember");
+		if (!authorizationResult.Succeeded)
+			return Results.Forbid();
+
+		var board = await boardService.GetByIdAsync(boardId, userId);
+
+		if (board is null)
+			return Results.NotFound(new { message = "Board not found" });
+
+		var response = new BoardDetailResponse(
+			board.Id,
+			board.Name,
+			board.Columns
+				.OrderBy(c => c.Order)
+				.Select(c => new ColumnResponse(
+					c.Id,
+					c.Name,
+					c.Order,
+					c.Cards
+						.OrderBy(card => card.Order)
+						.Select(card => new CardResponse(card.Id, card.Title, card.Description, card.Order))
+				))
+		);
+
+		return TypedResults.Ok(response);
+	}
+	catch (ForbiddenException ex)
+	{
+		return Results.Forbid();
+	}
 }).RequireAuthorization();
 
 app.Run();

@@ -182,5 +182,61 @@ namespace KanbanAPI.Tests.Endpoints
 			// Assert
 			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 		}
+
+		[Fact]
+		public async Task GetBoard_ByMember_ReturnsBoardWithColumnsAndCards()
+		{
+			// Arrange
+			var ownerEmail = "boardowner4@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Member Board"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			var memberEmail = "boardmember4@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(memberUser);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberUser.Id));
+
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			// Act
+			var response = await memberClient.GetAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+			var boardDetail = await response.Content.ReadFromJsonAsync<BoardDetailResponse>();
+			Assert.NotNull(boardDetail);
+			Assert.Equal(createdBoard.Id, boardDetail.Id);
+			Assert.Equal("Member Board", boardDetail.Name);
+			Assert.NotNull(boardDetail.Columns);
+		}
+
+		[Fact]
+		public async Task GetBoard_ByNonMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerEmail = "boardowner5@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Private Board"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			var nonMemberEmail = "nonmember5@example.com";
+			var nonMemberClient = await CreateAuthenticatedClientAsync(nonMemberEmail, "Test@123");
+
+			// Act
+			var response = await nonMemberClient.GetAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
 	}
 }

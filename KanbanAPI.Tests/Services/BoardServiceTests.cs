@@ -113,7 +113,7 @@ namespace KanbanAPI.Tests.Services
 		{
 			var nonExistentBoardId = Guid.NewGuid();
 
-			await Assert.ThrowsAsync<NotFoundException>(
+			await Assert.ThrowsAsync<ForbiddenException>(
 				() => _boardService.GetByIdAsync(nonExistentBoardId, _testUserId)
 			);
 		}

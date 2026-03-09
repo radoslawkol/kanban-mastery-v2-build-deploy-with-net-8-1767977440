@@ -14,20 +14,16 @@ namespace KanbanAPI.Services
 			_context = context;
 		}
 
-		public async Task<Board?> GetByIdAsync(Guid id, string currentUserId)
+		public async Task<Board?> GetByIdAsync(Guid boardId, string currentUserId)
 		{
-			var board = await _context.Boards
-				.Where(b => b.Id == id)
-				.Include(b => b.Members)
-				.Include(b => b.Columns)
-				.FirstOrDefaultAsync();
-
-			if (board is null)
-				throw new NotFoundException("Board not found.");
-
-			var isMember = await IsUserBoardMemberAsync(id, currentUserId);
+			var isMember = await IsUserBoardMemberAsync(boardId, currentUserId);
 			if (!isMember)
 				throw new ForbiddenException("You are not a member of this board.");
+
+			var board = await _context.Boards
+				.Include(b => b.Columns)
+					.ThenInclude(c => c.Cards)
+				.FirstOrDefaultAsync(b => b.Id == boardId);
 
 			return board;
 		}
