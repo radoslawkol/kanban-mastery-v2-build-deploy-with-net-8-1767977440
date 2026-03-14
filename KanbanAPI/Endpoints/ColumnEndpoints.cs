@@ -73,7 +73,7 @@ namespace KanbanAPI.Endpoints
 					return Results.Forbid();
 
 				var column = await columnService.UpdateColumnAsync(boardId, columnId, request.Name);
-				var response = new CreateColumnResponse(column.Id, column.Name, column.Order, column.BoardId);
+				var response = new UpdateColumnResponse(column.Id, column.Name, column.Order, column.BoardId);
 
 				return Results.Ok(response);
 			}

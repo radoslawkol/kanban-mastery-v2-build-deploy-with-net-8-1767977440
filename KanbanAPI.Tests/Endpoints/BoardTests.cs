@@ -315,7 +315,7 @@ namespace KanbanAPI.Tests.Endpoints
 
 			// Assert
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-			var updatedColumn = await response.Content.ReadFromJsonAsync<CreateColumnResponse>();
+			var updatedColumn = await response.Content.ReadFromJsonAsync<UpdateColumnResponse>();
 			Assert.NotNull(updatedColumn);
 			Assert.Equal("Updated Todo", updatedColumn.Name);
 		}
