@@ -238,5 +238,214 @@ namespace KanbanAPI.Tests.Endpoints
 			// Assert
 			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 		}
+
+		[Fact]
+		public async Task CreateColumn_ByMember_ReturnsCreated()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-columns-1@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Columns Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var memberEmail = "member-columns-1@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(member);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			// Act
+			var response = await memberClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+			var createdColumn = await response.Content.ReadFromJsonAsync<ColumnResponse>();
+			Assert.NotNull(createdColumn);
+			Assert.Equal("Todo", createdColumn.Name);
+		}
+
+		[Fact]
+		public async Task CreateColumn_ByNonMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-columns-2@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Private Columns Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var nonMemberClient = await CreateAuthenticatedClientAsync("nonmember-columns-2@example.com", "Test@123");
+
+			// Act
+			var response = await nonMemberClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
+
+		[Fact]
+		public async Task UpdateColumn_ByMember_ReturnsOk()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-update-col-1@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Update Columns Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var memberEmail = "member-update-col-1@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(member);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			// Create a column first
+			var columnResponse = await memberClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+			var column = await columnResponse.Content.ReadFromJsonAsync<CreateColumnResponse>();
+			Assert.NotNull(column);
+
+			// Act
+			var response = await memberClient.PutAsJsonAsync($"/api/boards/{board.Id}/columns/{column.Id}", new UpdateColumnRequest("Updated Todo"));
+
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+			var updatedColumn = await response.Content.ReadFromJsonAsync<UpdateColumnResponse>();
+			Assert.NotNull(updatedColumn);
+			Assert.Equal("Updated Todo", updatedColumn.Name);
+		}
+
+		[Fact]
+		public async Task UpdateColumn_ByNonMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-update-col-2@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Update Columns Board 2"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			using var db = CreateDbContext();
+			var column = new Column
+			{
+				Id = Guid.NewGuid(),
+				BoardId = board.Id,
+				Name = "Todo",
+				Order = 0
+			};
+			db.Columns.Add(column);
+			await db.SaveChangesAsync();
+
+			var nonMemberClient = await CreateAuthenticatedClientAsync("nonmember-update-col-2@example.com", "Test@123");
+
+			// Act
+			var response = await nonMemberClient.PutAsJsonAsync($"/api/boards/{board.Id}/columns/{column.Id}", new UpdateColumnRequest("Updated"));
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
+
+		[Fact]
+		public async Task DeleteColumn_ByMember_ReturnsNoContent()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-delete-col-1@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Delete Columns Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var memberEmail = "member-delete-col-1@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(member);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			// Create a column first
+			var columnResponse = await memberClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+			var column = await columnResponse.Content.ReadFromJsonAsync<CreateColumnResponse>();
+			Assert.NotNull(column);
+
+			// Act
+			var response = await memberClient.DeleteAsync($"/api/boards/{board.Id}/columns/{column.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+			// Verify column was deleted
+			var deletedColumn = await db.Columns.FindAsync(column.Id);
+			Assert.Null(deletedColumn);
+		}
+
+		[Fact]
+		public async Task DeleteColumn_ByNonMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-delete-col-2@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Delete Columns Board 2"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			using var db = CreateDbContext();
+			var column = new Column
+			{
+				Id = Guid.NewGuid(),
+				BoardId = board.Id,
+				Name = "Todo",
+				Order = 0
+			};
+			db.Columns.Add(column);
+			await db.SaveChangesAsync();
+
+			var nonMemberClient = await CreateAuthenticatedClientAsync("nonmember-delete-col-2@example.com", "Test@123");
+
+			// Act
+			var response = await nonMemberClient.DeleteAsync($"/api/boards/{board.Id}/columns/{column.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
+
+		[Fact]
+		public async Task DeleteColumn_WithExistingCards_ReturnsBadRequest()
+		{
+			// Arrange
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-columns-3@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Cards Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			using var db = CreateDbContext();
+			var column = new Column
+			{
+				Id = Guid.NewGuid(),
+				BoardId = board.Id,
+				Name = "In Progress",
+				Order = 0
+			};
+			db.Columns.Add(column);
+			db.Cards.Add(new Card
+			{
+				Id = Guid.NewGuid(),
+				ColumnId = column.Id,
+				Title = "Task",
+				Description = "Task Description",
+				Order = 0
+			});
+			await db.SaveChangesAsync();
+
+			// Act
+			var response = await ownerClient.DeleteAsync($"/api/boards/{board.Id}/columns/{column.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+		}
 	}
 }
