@@ -63,6 +63,7 @@ namespace KanbanAPI.Services
 				throw new NotFoundException("Column not found.");
 
 			column.Name = name;
+			column.ModifiedOn = DateTime.UtcNow;
 
 			await _context.SaveChangesAsync();
 
