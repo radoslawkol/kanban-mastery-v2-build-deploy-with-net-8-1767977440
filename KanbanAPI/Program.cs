@@ -2,6 +2,7 @@ using KanbanAPI.Authorization.Handlers;
 using KanbanAPI.Authorization.Requirements;
 using KanbanAPI.Data;
 using KanbanAPI.DTOs;
+using KanbanAPI.Endpoints;
 using KanbanAPI.Exceptions;
 using KanbanAPI.Models;
 using KanbanAPI.Services;
@@ -30,6 +31,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBoardService, BoardService>();
+builder.Services.AddScoped<IColumnService, ColumnService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -82,7 +84,7 @@ app.MapPost("/api/boards", async (CreateBoardRequest createBoardRequest, HttpCon
     {
         return Results.BadRequest(new { message = ex.Message });
 	}
-	
+
 }).RequireAuthorization();
 
 app.MapPost("/api/boards/{boardId}/members", async (
@@ -103,7 +105,7 @@ app.MapPost("/api/boards/{boardId}/members", async (
 
 		return Results.Ok(new { message = "Member added successfully" });
 	}
-	catch (ForbiddenException ex)
+	catch (ForbiddenException)
 	{
 		return Results.Forbid();
 	}
@@ -118,7 +120,7 @@ app.MapPost("/api/boards/{boardId}/members", async (
 	catch (ArgumentException ex)
 	{
 		return Results.BadRequest(new { message = ex.Message });
-	}	
+	}
 }).RequireAuthorization();
 
 app.MapGet("/api/boards/{boardId}",
@@ -163,6 +165,7 @@ app.MapGet("/api/boards/{boardId}",
 	}
 }).RequireAuthorization();
 
+app.MapColumnEndpoints();
 app.Run();
 
 public partial class Program { }
