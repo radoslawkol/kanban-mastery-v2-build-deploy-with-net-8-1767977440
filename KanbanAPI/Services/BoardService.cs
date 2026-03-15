@@ -97,7 +97,12 @@ namespace KanbanAPI.Services
 			if (!isOwner)
 				throw new ForbiddenException("Only board owners can delete the board.");
 
-			var board = await _context.Boards.FindAsync(id);
+			var board = await _context.Boards
+				.Include(b => b.Columns)
+					.ThenInclude(c => c.Cards)
+				.Include(b => b.Members)
+				.FirstOrDefaultAsync(b => b.Id == id);
+			
 			if (board is null)
 				throw new NotFoundException("Board not found.");
 
