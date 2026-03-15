@@ -447,5 +447,231 @@ namespace KanbanAPI.Tests.Endpoints
 			// Assert
 			Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 		}
+
+		#region Board Update Authorization Tests
+
+		[Fact]
+		public async Task UpdateBoard_ByOwner_ReturnsOkAndUpdatesName()
+		{
+			// Arrange
+			var ownerEmail = "board-update-owner@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			// Create a board as owner
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Original Board Name"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			var updateRequest = new UpdateBoardRequest("Updated Board Name");
+
+			// Act
+			var response = await ownerClient.PutAsJsonAsync($"/api/boards/{createdBoard.Id}", updateRequest);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+			var updatedBoard = await response.Content.ReadFromJsonAsync<UpdateBoardResponse>();
+			Assert.NotNull(updatedBoard);
+			Assert.Equal("Updated Board Name", updatedBoard.Name);
+
+			using var db = CreateDbContext();
+			var boardRecord = await db.Boards.FindAsync(createdBoard.Id);
+			Assert.NotNull(boardRecord);
+			Assert.Equal("Updated Board Name", boardRecord.Name);
+		}
+
+		[Fact]
+		public async Task UpdateBoard_ByMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerEmail = "board-update-owner2@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Member Test Board"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			var memberEmail = "board-update-member@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(memberUser);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberUser.Id));
+
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			var updateRequest = new UpdateBoardRequest("Unauthorized Update");
+
+			// Act
+			var response = await memberClient.PutAsJsonAsync($"/api/boards/{createdBoard.Id}", updateRequest);
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+			var boardRecord = await db.Boards.FindAsync(createdBoard.Id);
+			Assert.NotNull(boardRecord);
+			Assert.Equal("Member Test Board", boardRecord.Name);
+		}
+
+		#endregion
+
+		#region Board Delete Authorization Tests
+
+		[Fact]
+		public async Task DeleteBoard_ByOwner_ReturnsNoContentAndDeletesBoard()
+		{
+			// Arrange
+			var ownerEmail = "board-delete-owner@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Board To Delete"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			// Act
+			var response = await ownerClient.DeleteAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+			using var db = CreateDbContext();
+			var boardRecord = await db.Boards.FindAsync(createdBoard.Id);
+			Assert.Null(boardRecord);
+		}
+
+		[Fact]
+		public async Task DeleteBoard_ByOwner_CascadeDeletesColumnsAndCards()
+		{
+			// Arrange
+			var ownerEmail = "board-delete-cascade-owner@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			// Create a board as owner
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Board With Data"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			// Add columns and cards
+			using var db = CreateDbContext();
+			var column = new Column
+			{
+				Id = Guid.NewGuid(),
+				BoardId = createdBoard.Id,
+				Name = "To Delete",
+				Order = 0
+			};
+			var card = new Card
+			{
+				Id = Guid.NewGuid(),
+				ColumnId = column.Id,
+				Title = "Task",
+				Description = "Description",
+				Order = 0
+			};
+			db.Columns.Add(column);
+			db.Cards.Add(card);
+			await db.SaveChangesAsync();
+
+			var columnId = column.Id;
+			var cardId = card.Id;
+
+			// Act
+			var response = await ownerClient.DeleteAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+			db.ChangeTracker.Clear();
+
+			var boardRecord = await db.Boards.FindAsync(createdBoard.Id);
+			var columnRecord = await db.Columns.FindAsync(columnId);
+			var cardRecord = await db.Cards.FindAsync(cardId);
+
+			Assert.Null(boardRecord);
+			Assert.Null(columnRecord);
+			Assert.Null(cardRecord);
+		}
+
+		[Fact]
+		public async Task DeleteBoard_ByMember_ReturnsForbidden()
+		{
+			// Arrange
+			var ownerEmail = "board-delete-owner2@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Member Delete Test Board"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			var memberEmail = "board-delete-member@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(memberUser);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberUser.Id));
+
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			// Act
+			var response = await memberClient.DeleteAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+		}
+
+		[Fact]
+		public async Task DeleteBoard_ByOwner_DeletesBoardMemberships()
+		{
+			// Arrange
+			var ownerEmail = "board-delete-members-owner@example.com";
+			var ownerClient = await CreateAuthenticatedClientAsync(ownerEmail, "Test@123");
+
+			// Create a board as owner
+			var createBoardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Board With Members"));
+			var createdBoard = await createBoardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(createdBoard);
+
+			// Add multiple members
+			using var db = CreateDbContext();
+			var member1Email = "board-delete-member-1@example.com";
+			var member2Email = "board-delete-member-2@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = member1Email, password = "Test@123" });
+			await _client.PostAsJsonAsync("/register", new { email = member2Email, password = "Test@123" });
+
+			var member1 = await db.Users.SingleOrDefaultAsync(u => u.Email == member1Email);
+			var member2 = await db.Users.SingleOrDefaultAsync(u => u.Email == member2Email);
+			Assert.NotNull(member1);
+			Assert.NotNull(member2);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member1.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member2.Id));
+
+			var membershipsBeforeDelete = await db.BoardMembers
+				.Where(bm => bm.BoardId == createdBoard.Id)
+				.CountAsync();
+			Assert.Equal(3, membershipsBeforeDelete); // Owner + 2 members
+
+			// Act
+			var response = await ownerClient.DeleteAsync($"/api/boards/{createdBoard.Id}");
+
+			// Assert
+			Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+			db.ChangeTracker.Clear();
+
+			var boardRecord = await db.Boards.FindAsync(createdBoard.Id);
+			var membershipsAfterDelete = await db.BoardMembers
+				.Where(bm => bm.BoardId == createdBoard.Id)
+				.CountAsync();
+
+			Assert.Null(boardRecord);
+			Assert.Equal(0, membershipsAfterDelete);
+		}
+
+		#endregion
 	}
 }
