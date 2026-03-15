@@ -2,6 +2,8 @@ namespace KanbanAPI.DTOs
 {
 	public record CreateBoardRequest(string BoardName);
 	public record CreateBoardResponse(Guid Id, string BoardName);
+	public record UpdateBoardRequest(string Name);
+	public record UpdateBoardResponse(Guid Id, string Name);
 	public record AddBoardMemberRequest(string UserId);
 	public record CreateColumnRequest(string Name, int? Position);
 	public record UpdateColumnRequest(string Name);

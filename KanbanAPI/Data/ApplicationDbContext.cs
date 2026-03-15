@@ -20,6 +20,18 @@ namespace KanbanAPI.Data
 		{
 			base.OnModelCreating(builder);
 
+			builder.Entity<Board>()
+				.HasMany(b => b.Columns)
+				.WithOne(c => c.Board)
+				.HasForeignKey(c => c.BoardId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.Entity<Column>()
+				.HasMany(c => c.Cards)
+				.WithOne(card => card.Column)
+				.HasForeignKey(card => card.ColumnId)
+				.OnDelete(DeleteBehavior.Cascade);
+
 			builder.Entity<BoardMember>()
 				.HasKey(bm => new { bm.UserId, bm.BoardId });
 
@@ -31,7 +43,8 @@ namespace KanbanAPI.Data
 			builder.Entity<BoardMember>()
 				.HasOne(bm => bm.Board)
 				.WithMany(b => b.Members)
-				.HasForeignKey(bm => bm.BoardId);
+				.HasForeignKey(bm => bm.BoardId)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }
