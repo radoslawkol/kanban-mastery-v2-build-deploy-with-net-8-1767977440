@@ -85,5 +85,21 @@ namespace KanbanAPI.Services
 			_context.Cards.Remove(card);
 			await _context.SaveChangesAsync();
 		}
+
+		public async Task<Card?> AssignCardAsync(Guid cardId, string userId)
+		{
+			var card = await _context.Cards
+				.FirstOrDefaultAsync(c => c.Id == cardId);
+
+			if (card is null)
+				return null;
+
+			card.AssignedToUserId = userId;
+			card.ModifiedOn = DateTime.UtcNow;
+
+			await _context.SaveChangesAsync();
+
+			return card;
+		}
 	}
 }
