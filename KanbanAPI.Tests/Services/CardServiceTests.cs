@@ -104,6 +104,29 @@ namespace KanbanAPI.Tests.Services
 				_cardService.DeleteCardAsync(board2.Id, card.Id));
 		}
 
+		[Fact]
+		public async Task AssignCardAsync_WithValidCardId_ShouldSetAssignedToUserId()
+		{
+			var board = await CreateBoardAsync();
+			var column = await CreateColumnAsync(board.Id, "Todo", 0);
+			var card = await _cardService.CreateCardAsync(board.Id, "Task 1", null, column.Id);
+			var userId = "user-abc";
+
+			var result = await _cardService.AssignCardAsync(card.Id, userId);
+
+			Assert.NotNull(result);
+			Assert.Equal(userId, result.AssignedToUserId);
+			Assert.Equal(card.Id, result.Id);
+		}
+
+		[Fact]
+		public async Task AssignCardAsync_WithUnknownCardId_ShouldReturnNull()
+		{
+			var result = await _cardService.AssignCardAsync(Guid.NewGuid(), "user-abc");
+
+			Assert.Null(result);
+		}
+
 		private async Task<Board> CreateBoardAsync()
 		{
 			var board = new Board
