@@ -32,6 +32,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IColumnService, ColumnService>();
+builder.Services.AddScoped<ICardService, CardService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -145,6 +146,7 @@ app.MapGet("/api/boards/{boardId}",
 
 app.MapBoardEndpoints();
 app.MapColumnEndpoints();
+app.MapCardEndpoints();
 app.Run();
 
 public partial class Program { }
