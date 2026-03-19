@@ -8,6 +8,7 @@
 		public int Order { get; set; }
 		public Guid ColumnId { get; set; }
 		public Column Column { get; set; } = null!;
+		public string? AssignedToUserId { get; set; }
 		public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
 		public DateTime ModifiedOn { get; set; } = DateTime.UtcNow;
 	}

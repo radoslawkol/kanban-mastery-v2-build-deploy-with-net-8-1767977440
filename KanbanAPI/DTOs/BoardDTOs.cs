@@ -16,4 +16,6 @@ namespace KanbanAPI.DTOs
 	public record CardResponse(Guid Id, string Title, string Description, int Order);
 	public record ColumnResponse(Guid Id, string Name, int Order, IEnumerable<CardResponse> Cards);
 	public record BoardDetailResponse(Guid Id, string Name, IEnumerable<ColumnResponse> Columns);
+	public record AssignCardRequest(string UserId);
+	public record AssignCardResponse(Guid Id, string Title, string Description, Guid ColumnId, int Order, string? AssignedToUserId);
 }

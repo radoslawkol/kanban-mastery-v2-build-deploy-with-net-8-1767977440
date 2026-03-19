@@ -16,6 +16,7 @@ namespace KanbanAPI.Endpoints
 			cards.MapPost("/", CreateCard);
 			cards.MapPut("/{cardId}", UpdateCard);
 			cards.MapDelete("/{cardId}", DeleteCard);
+			cards.MapPut("/{cardId}/assign", AssignCard);
 
 			return app;
 		}
@@ -109,6 +110,35 @@ namespace KanbanAPI.Endpoints
 			{
 				return Results.NotFound(new { message = ex.Message });
 			}
+		}
+
+		private static async Task<IResult> AssignCard(
+			Guid boardId,
+			Guid cardId,
+			AssignCardRequest dto,
+			HttpContext httpContext,
+			IAuthorizationService authorizationService,
+			ICardService cardService,
+			IBoardService boardService)
+		{
+			var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userId))
+				return Results.Unauthorized();
+
+			var authorizationResult = await authorizationService.AuthorizeAsync(httpContext.User, boardId, "IsBoardMember");
+			if (!authorizationResult.Succeeded)
+				return Results.Forbid();
+
+			var isMember = await boardService.IsUserBoardMemberAsync(boardId, dto.UserId);
+			if (!isMember)
+				return Results.BadRequest(new { message = "User is not a board member" });
+
+			var card = await cardService.AssignCardAsync(cardId, dto.UserId);
+			if (card is null)
+				return Results.NotFound();
+
+			var response = new AssignCardResponse(card.Id, card.Title, card.Description, card.ColumnId, card.Order, card.AssignedToUserId);
+			return Results.Ok(response);
 		}
 	}
 }

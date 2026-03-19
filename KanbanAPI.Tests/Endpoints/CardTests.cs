@@ -233,5 +233,76 @@ namespace KanbanAPI.Tests.Endpoints
 
 			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 		}
+
+		[Fact]
+		public async Task AssignCard_ToValidBoardMember_ReturnsOkWithAssignedUserId()
+		{
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-assign-card-1@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Assign Card Board"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var memberEmail = "member-assign-card-1@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(member);
+
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
+
+			var columnResponse = await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+			var column = await columnResponse.Content.ReadFromJsonAsync<CreateColumnResponse>();
+			Assert.NotNull(column);
+
+			var createCardResponse = await ownerClient.PostAsJsonAsync(
+				$"/api/boards/{board.Id}/cards/",
+				new CreateCardRequest("Task", "Description", column.Id));
+			var createdCard = await createCardResponse.Content.ReadFromJsonAsync<CreateCardResponse>();
+			Assert.NotNull(createdCard);
+
+			var response = await memberClient.PutAsJsonAsync(
+				$"/api/boards/{board.Id}/cards/{createdCard.Id}/assign",
+				new AssignCardRequest(member.Id));
+
+			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+			var assignedCard = await response.Content.ReadFromJsonAsync<AssignCardResponse>();
+			Assert.NotNull(assignedCard);
+			Assert.Equal(member.Id, assignedCard.AssignedToUserId);
+			Assert.Equal(createdCard.Id, assignedCard.Id);
+		}
+
+		[Fact]
+		public async Task AssignCard_ToNonBoardMember_ReturnsBadRequest()
+		{
+			var ownerClient = await CreateAuthenticatedClientAsync("owner-assign-card-2@example.com", "Test@123");
+			var boardResponse = await ownerClient.PostAsJsonAsync("/api/boards/", new CreateBoardRequest("Assign Card Board 2"));
+			var board = await boardResponse.Content.ReadFromJsonAsync<CreateBoardResponse>();
+			Assert.NotNull(board);
+
+			var columnResponse = await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/columns/", new CreateColumnRequest("Todo", null));
+			var column = await columnResponse.Content.ReadFromJsonAsync<CreateColumnResponse>();
+			Assert.NotNull(column);
+
+			var createCardResponse = await ownerClient.PostAsJsonAsync(
+				$"/api/boards/{board.Id}/cards/",
+				new CreateCardRequest("Task", "Description", column.Id));
+			var createdCard = await createCardResponse.Content.ReadFromJsonAsync<CreateCardResponse>();
+			Assert.NotNull(createdCard);
+
+			var nonMemberEmail = "nonmember-assign-card-2@example.com";
+			await _client.PostAsJsonAsync("/register", new { email = nonMemberEmail, password = "Test@123" });
+
+			using var db = CreateDbContext();
+			var nonMember = await db.Users.SingleOrDefaultAsync(u => u.Email == nonMemberEmail);
+			Assert.NotNull(nonMember);
+
+			var response = await ownerClient.PutAsJsonAsync(
+				$"/api/boards/{board.Id}/cards/{createdCard.Id}/assign",
+				new AssignCardRequest(nonMember.Id));
+
+			Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+		}
 	}
 }
