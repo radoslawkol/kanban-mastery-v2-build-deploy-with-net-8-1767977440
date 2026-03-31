@@ -7,6 +7,7 @@ import AuthCard from "../components/AuthCard";
 import FormInput from "../components/FormInput";
 import FormButton from "../components/FormButton";
 import { useRegisterUser } from "../hooks/useRegisterMutation";
+import type { RegisterRequest } from "../types/auth";
 import { toast } from "react-toastify";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 
@@ -14,6 +15,7 @@ type RegisterFormValues = {
 	username: string;
 	email: string;
 	password: string;
+	confirmPassword: string;
 };
 
 const minUsernameLength = 3;
@@ -57,6 +59,11 @@ const RegisterUserSchema = z
 				maxPasswordLength,
 				`Password must be at most ${maxPasswordLength} characters`,
 			),
+		confirmPassword: z.string().min(1, "Confirm password is required"),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		path: ["confirmPassword"],
+		message: "Passwords do not match",
 	})
 	.required();
 
@@ -73,7 +80,13 @@ export default function RegisterPage() {
 	});
 
 	const onSubmit = async (data: RegisterFormValues) => {
-		registerMutation.mutate(data, {
+		const payload: RegisterRequest = {
+			username: data.username,
+			email: data.email,
+			password: data.password,
+		};
+
+		registerMutation.mutate(payload, {
 			onSuccess: () => {
 				toast.success("Account created successfully! Please log in.");
 				navigate("/login", { replace: true });
@@ -121,6 +134,15 @@ export default function RegisterPage() {
 					autoComplete='new-password'
 					{...register("password")}
 					error={errors.password?.message}
+				/>
+
+				<FormInput
+					id='confirmPassword'
+					label='Confirm password'
+					type='password'
+					autoComplete='new-password'
+					{...register("confirmPassword")}
+					error={errors.confirmPassword?.message}
 				/>
 
 				<FormButton
