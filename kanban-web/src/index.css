@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+@theme {
+	--color-surface-50: #f9fcff;
+	--color-surface-300: #d7e3ef;
+
+	--color-ink-600: #45607a;
+	--color-ink-700: #2e4860;
+	--color-ink-900: #11243a;
+
+	--color-primary-500: #2b8cd4;
+	--color-primary-600: #1f7ccf;
+	--color-primary-700: #145f9f;
+	--color-primary: #1f7ccf;
+
+	--color-accent-500: #17a2b8;
+
+	--color-danger-50: #ffe6e6;
+	--color-danger-200: #f3b5b5;
+	--color-danger-700: #9b1818;
+
+	--color-success-50: #e5f7e7;
+	--color-success-200: #aee2b4;
+	--color-success-700: #11652c;
+}
+
+:root {
+	--auth-page-bg:
+		radial-gradient(circle at 15% 20%, #e9ffdf 0, transparent 35%),
+		radial-gradient(circle at 80% 5%, #d8eefc 0, transparent 40%),
+		linear-gradient(180deg, #f9fcff 0%, #eff4f8 100%);
+	--auth-card-bg: rgba(249, 252, 255, 0.9);
+	--auth-card-shadow: 0 18px 40px rgba(17, 36, 58, 0.12);
+}
+
 *,
 *::before,
 *::after {
@@ -7,7 +40,6 @@
 }
 
 body {
-	padding: 0;
 	margin: 0;
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }

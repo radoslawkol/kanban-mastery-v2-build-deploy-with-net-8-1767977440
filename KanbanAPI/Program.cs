@@ -12,6 +12,8 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string ClientCorsPolicy = "_clientCorsPolicy";
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -34,6 +36,20 @@ builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ICardService, CardService>();
 
+builder.Services.AddCors(options =>
+{
+	options.AddPolicy(ClientCorsPolicy, policy =>
+		policy
+			.WithOrigins(
+				"http://localhost:5173",
+				"https://localhost:5173",
+				"http://127.0.0.1:5173",
+				"https://127.0.0.1:5173"
+			)
+			.AllowAnyHeader()
+			.AllowAnyMethod());
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -48,6 +64,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(ClientCorsPolicy);
 
 app.MapIdentityApi<ApplicationUser>();
 
