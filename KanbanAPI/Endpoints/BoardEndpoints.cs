@@ -13,11 +13,36 @@ namespace KanbanAPI.Endpoints
 			var boards = app.MapGroup("/api/boards")
 				.RequireAuthorization();
 
+			boards.MapGet("/", GetCurrentUserBoards);
 			boards.MapPost("/", CreateBoard);
 			boards.MapPut("/{boardId}", UpdateBoard);
 			boards.MapDelete("/{boardId}", DeleteBoard);
 
 			return app;
+		}
+
+		private static async Task<IResult> GetCurrentUserBoards(
+			HttpContext httpContext,
+			IBoardService boardService)
+		{
+			try
+			{
+				var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+				if (string.IsNullOrEmpty(userId))
+					return Results.Unauthorized();
+
+				var boards = await boardService.GetUserBoardsAsync(userId, userId);
+				var response = boards
+					.Select(board => new UserBoardResponse(board.Id, board.Name))
+					.ToList();
+
+				return TypedResults.Ok(response);
+			}
+			catch (ForbiddenException ex)
+			{
+				return Results.Forbid();
+			}
 		}
 
 		private static async Task<IResult> CreateBoard(
