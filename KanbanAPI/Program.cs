@@ -149,7 +149,7 @@ app.MapGet("/api/boards/{boardId}",
 					c.Order,
 					c.Cards
 						.OrderBy(card => card.Order)
-						.Select(card => new CardResponse(card.Id, card.Title, card.Description, card.Order))
+						.Select(card => new CardResponse(card.Id, card.Title, card.Description, card.Order, card.AssignedToUserId))
 				))
 		);
 
