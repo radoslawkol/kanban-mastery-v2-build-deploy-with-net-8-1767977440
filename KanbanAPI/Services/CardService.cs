@@ -89,6 +89,7 @@ namespace KanbanAPI.Services
 		public async Task<Card?> AssignCardAsync(Guid cardId, string userId)
 		{
 			var card = await _context.Cards
+				.Include(c => c.AssignedToUser)
 				.FirstOrDefaultAsync(c => c.Id == cardId);
 
 			if (card is null)

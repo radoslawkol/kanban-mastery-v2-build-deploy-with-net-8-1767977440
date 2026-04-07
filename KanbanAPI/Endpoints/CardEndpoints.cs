@@ -137,7 +137,16 @@ namespace KanbanAPI.Endpoints
 			if (card is null)
 				return Results.NotFound();
 
-			var response = new AssignCardResponse(card.Id, card.Title, card.Description, card.ColumnId, card.Order, card.AssignedToUserId);
+			var response = new AssignCardResponse(
+				card.Id, 
+				card.Title, 
+				card.Description, 
+				card.ColumnId, 
+				card.Order, 
+				card.AssignedToUserId,
+				card.AssignedToUser != null 
+					? new UserResponse(card.AssignedToUser.Id, card.AssignedToUser.UserName, card.AssignedToUser.Email)
+					: null);
 			return Results.Ok(response);
 		}
 	}
