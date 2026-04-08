@@ -1,3 +1,4 @@
+import { Droppable } from "@hello-pangea/dnd";
 import type { BoardColumn } from "../../types/board";
 import BoardCardItem from "./BoardCardItem";
 
@@ -17,12 +18,20 @@ export default function BoardColumn({ column }: BoardColumnProps) {
 				</span>
 			</header>
 
-			<div className='space-y-3'>
-				{column.cards.map((card) => (
-					<BoardCardItem key={card.id} card={card} />
-				))}
-			</div>
-
+			<Droppable droppableId={column.id}>
+				{(provided) => (
+					<div
+						className='space-y-3'
+						ref={provided.innerRef}
+						{...provided.droppableProps}
+					>
+						{column.cards.map((card) => (
+							<BoardCardItem key={card.id} card={card} />
+						))}
+						{provided.placeholder}
+					</div>
+				)}
+			</Droppable>
 			{column.cards.length === 0 ? (
 				<p className='mt-3 rounded-lg border border-dashed border-surface-300 p-3 text-sm text-ink-600'>
 					No cards in this column yet.

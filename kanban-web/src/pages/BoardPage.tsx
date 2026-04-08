@@ -2,8 +2,9 @@ import { Link, useParams } from "react-router-dom";
 import { useBoardByIdQuery } from "../hooks/useBoardByIdQuery";
 import ErrorMessage from "../components/ErrorMessage";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
-import BoardColumnSection from "../components/board/BoardColumn";
+import BoardColumn from "../components/board/BoardColumn";
 import PageContainer from "../components/ui/PageContainer";
+import { DragDropContext } from "@hello-pangea/dnd";
 
 export default function BoardPage() {
 	const { boardId } = useParams();
@@ -38,6 +39,8 @@ export default function BoardPage() {
 		);
 	}
 
+	const handleOnDragEnd = () => {};
+
 	return (
 		<PageContainer>
 			<div className='mb-6 flex items-center justify-between gap-4'>
@@ -55,17 +58,19 @@ export default function BoardPage() {
 				</Link>
 			</div>
 
-			{board.columns.length === 0 ? (
-				<div className='rounded-xl border border-dashed border-surface-300 p-5 text-sm text-ink-700'>
-					This board has no columns yet.
-				</div>
-			) : (
-				<div className='flex gap-5 overflow-x-auto pb-2'>
-					{board.columns.map((column) => (
-						<BoardColumnSection key={column.id} column={column} />
-					))}
-				</div>
-			)}
+			<DragDropContext onDragEnd={handleOnDragEnd}>
+				{board.columns.length === 0 ? (
+					<div className='rounded-xl border border-dashed border-surface-300 p-5 text-sm text-ink-700'>
+						This board has no columns yet.
+					</div>
+				) : (
+					<div className='flex gap-5 overflow-x-auto pb-2'>
+						{board.columns.map((column) => (
+							<BoardColumn key={column.id} column={column} />
+						))}
+					</div>
+				)}
+			</DragDropContext>
 		</PageContainer>
 	);
 }
