@@ -4,7 +4,8 @@ import ErrorMessage from "../components/ErrorMessage";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 import BoardColumn from "../components/board/BoardColumn";
 import PageContainer from "../components/ui/PageContainer";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { useState, useEffect } from "react";
 
 export default function BoardPage() {
 	const { boardId } = useParams();
@@ -13,6 +14,13 @@ export default function BoardPage() {
 		boardQuery.error,
 		"We could not load this board. Please try again.",
 	);
+	const [columns, setColumns] = useState(boardQuery.data?.columns);
+
+	useEffect(() => {
+		if (boardQuery.data?.columns) {
+			setColumns(boardQuery.data.columns);
+		}
+	}, [boardQuery.data]);
 
 	if (boardQuery.isLoading) {
 		return (
@@ -39,7 +47,39 @@ export default function BoardPage() {
 		);
 	}
 
-	const handleOnDragEnd = () => {};
+	const handleOnDragEnd = (result: DropResult<string>) => {
+		const { destination, source, draggableId } = result;
+
+		if (!destination) {
+			return;
+		}
+
+		if (
+			destination.droppableId === source.droppableId &&
+			destination.index === source.index
+		) {
+			return;
+		}
+
+		// TODO: Update local state to reflect the new card order after drag-and-drop
+		// think of if we want to map data from api to simpler structure
+
+		// const column = columns?.find((col) => col.id === source.droppableId);
+		// const newCardsIds = A;
+
+		// const newColumn = {
+		// 	...column,
+		// };
+
+		// const newState = {
+		// 	...columns,
+		// 	newColumn,
+		// };
+
+		// setColumns(newState);
+
+		// TODO: Call endpoint to update card order in the backend
+	};
 
 	return (
 		<PageContainer>
@@ -58,14 +98,14 @@ export default function BoardPage() {
 				</Link>
 			</div>
 
-			<DragDropContext onDragEnd={handleOnDragEnd}>
+			<DragDropContext onDragEnd={(result) => handleOnDragEnd(result)}>
 				{board.columns.length === 0 ? (
 					<div className='rounded-xl border border-dashed border-surface-300 p-5 text-sm text-ink-700'>
 						This board has no columns yet.
 					</div>
 				) : (
 					<div className='flex gap-5 overflow-x-auto pb-2'>
-						{board.columns.map((column) => (
+						{columns?.map((column) => (
 							<BoardColumn key={column.id} column={column} />
 						))}
 					</div>
