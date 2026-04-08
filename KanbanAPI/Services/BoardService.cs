@@ -23,6 +23,7 @@ namespace KanbanAPI.Services
 			var board = await _context.Boards
 				.Include(b => b.Columns)
 					.ThenInclude(c => c.Cards)
+						.ThenInclude(card => card.AssignedToUser)
 				.FirstOrDefaultAsync(b => b.Id == boardId);
 
 			return board;
