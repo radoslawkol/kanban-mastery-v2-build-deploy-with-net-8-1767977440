@@ -11,7 +11,7 @@ namespace KanbanAPI.DTOs
 	public record CreateColumnResponse(Guid Id, string Name, int Order, Guid BoardId);
 	public record UpdateColumnResponse(Guid Id, string Name, int Order, Guid BoardId);
 	public record CreateCardRequest(string Title, string? Description, Guid ColumnId);
-	public record UpdateCardRequest(string Title, string? Description, Guid ColumnId);
+	public record UpdateCardRequest(string Title, string? Description, Guid ColumnId, int Order);
 	public record CreateCardResponse(Guid Id, string Title, string Description, Guid ColumnId, int Order);
 	public record UpdateCardResponse(Guid Id, string Title, string Description, Guid ColumnId, int Order);
 	public record UserResponse(string Id, string? UserName, string? Email);

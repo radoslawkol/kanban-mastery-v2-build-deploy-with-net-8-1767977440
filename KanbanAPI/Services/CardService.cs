@@ -45,7 +45,7 @@ namespace KanbanAPI.Services
 			return card;
 		}
 
-		public async Task<Card> UpdateCardAsync(Guid boardId, Guid cardId, string title, string? description, Guid columnId)
+		public async Task<Card> UpdateCardAsync(Guid boardId, Guid cardId, string title, string? description, Guid columnId, int order)
 		{
 			if (string.IsNullOrWhiteSpace(title))
 				throw new ArgumentException("Card title cannot be empty.", nameof(title));
@@ -63,9 +63,15 @@ namespace KanbanAPI.Services
 			if (!targetColumnExists)
 				throw new NotFoundException("Column not found.");
 
+			if (order < 0)
+			{
+				throw new ArgumentException("Order value cannot be less that 0.");
+			}
+
 			card.Title = title;
 			card.Description = description ?? string.Empty;
 			card.ColumnId = columnId;
+			card.Order = order;
 			card.ModifiedOn = DateTime.UtcNow;
 
 			await _context.SaveChangesAsync();
