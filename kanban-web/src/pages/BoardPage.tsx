@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useBoardByIdQuery } from "../hooks/useBoardByIdQuery";
+import { useUpdateCardMutation } from "../hooks/useUpdateCardMutation";
 import ErrorMessage from "../components/ErrorMessage";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 import BoardColumn from "../components/board/BoardColumn";
@@ -10,6 +11,7 @@ import { useState, useEffect } from "react";
 export default function BoardPage() {
 	const { boardId } = useParams();
 	const boardQuery = useBoardByIdQuery(boardId);
+	const updateCardOrderMutation = useUpdateCardMutation();
 	const boardLoadError = extractApiErrorMessage(
 		boardQuery.error,
 		"We could not load this board. Please try again.",
@@ -106,10 +108,22 @@ export default function BoardPage() {
 			card.order = idx;
 		});
 
-		// Update state with new columns
 		setColumns(newColumns);
 
-		// TODO: Call endpoint to update card order in the backend
+		const movedCardDetails = newColumns
+			.flatMap((col) => col.cards)
+			.find((card) => card.id === draggableId);
+
+		if (movedCardDetails) {
+			updateCardOrderMutation.mutate({
+				boardId: boardId!,
+				cardId: draggableId,
+				title: movedCardDetails.title,
+				description: movedCardDetails.description,
+				columnId: destination.droppableId,
+				order: destination.index,
+			});
+		}
 	};
 
 	return (
