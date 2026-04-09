@@ -8,7 +8,7 @@ type BoardColumnProps = {
 
 export default function BoardColumn({ column }: BoardColumnProps) {
 	return (
-		<section className='w-72 shrink-0 rounded-xl border border-surface-300 bg-surface-50 p-4'>
+		<section className='flex flex-col w-72 shrink-0 rounded-xl border border-surface-300 bg-surface-50 p-4'>
 			<header className='mb-4 flex items-center justify-between'>
 				<h2 className='text-lg font-semibold text-ink-900'>
 					{column.name}
@@ -17,11 +17,16 @@ export default function BoardColumn({ column }: BoardColumnProps) {
 					{column.cards.length}
 				</span>
 			</header>
+			{column.cards.length === 0 ? (
+				<p className='mt-3 rounded-lg border border-dashed border-surface-300 p-3 text-sm text-ink-600'>
+					No cards in this column yet.
+				</p>
+			) : null}
 
 			<Droppable droppableId={column.id}>
 				{(provided, snapshot) => (
 					<div
-						className={`space-y-3 transition-colors delay-200 ${snapshot.isDraggingOver ? "bg-gray-100" : ""}`}
+						className={`grow space-y-3 transition-colors delay-200 ${snapshot.isDraggingOver ? "bg-gray-100" : ""}`}
 						ref={provided.innerRef}
 						{...provided.droppableProps}
 					>
@@ -32,11 +37,6 @@ export default function BoardColumn({ column }: BoardColumnProps) {
 					</div>
 				)}
 			</Droppable>
-			{column.cards.length === 0 ? (
-				<p className='mt-3 rounded-lg border border-dashed border-surface-300 p-3 text-sm text-ink-600'>
-					No cards in this column yet.
-				</p>
-			) : null}
 		</section>
 	);
 }
