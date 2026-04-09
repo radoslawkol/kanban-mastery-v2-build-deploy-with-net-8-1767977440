@@ -61,22 +61,53 @@ export default function BoardPage() {
 			return;
 		}
 
-		// TODO: Update local state to reflect the new card order after drag-and-drop
-		// think of if we want to map data from api to simpler structure
+		// Create a deep copy of columns to avoid mutating state
+		const newColumns =
+			columns?.map((col) => ({
+				...col,
+				cards: [...col.cards],
+			})) ?? [];
 
-		// const column = columns?.find((col) => col.id === source.droppableId);
-		// const newCardsIds = A;
+		// Find source and destination columns
+		const sourceColumnIndex = newColumns.findIndex(
+			(col) => col.id === source.droppableId,
+		);
+		const destColumnIndex = newColumns.findIndex(
+			(col) => col.id === destination.droppableId,
+		);
 
-		// const newColumn = {
-		// 	...column,
-		// };
+		if (sourceColumnIndex === -1 || destColumnIndex === -1) {
+			return;
+		}
 
-		// const newState = {
-		// 	...columns,
-		// 	newColumn,
-		// };
+		const sourceColumn = newColumns[sourceColumnIndex];
+		const destColumn = newColumns[destColumnIndex];
 
-		// setColumns(newState);
+		// Find the card being dragged
+		const cardIndex = sourceColumn.cards.findIndex(
+			(card) => card.id === draggableId,
+		);
+		if (cardIndex === -1) {
+			return;
+		}
+
+		const [movedCard] = sourceColumn.cards.splice(cardIndex, 1);
+
+		// Insert card into destination column at the new index
+		destColumn.cards.splice(destination.index, 0, movedCard);
+
+		// Update order for all cards in source column
+		sourceColumn.cards.forEach((card, idx) => {
+			card.order = idx;
+		});
+
+		// Update order for all cards in destination column
+		destColumn.cards.forEach((card, idx) => {
+			card.order = idx;
+		});
+
+		// Update state with new columns
+		setColumns(newColumns);
 
 		// TODO: Call endpoint to update card order in the backend
 	};
