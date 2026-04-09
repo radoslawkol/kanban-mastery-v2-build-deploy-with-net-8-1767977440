@@ -9,9 +9,9 @@ type BoardCardItemProps = {
 export default function BoardDetailCard({ card }: BoardCardItemProps) {
 	return (
 		<Draggable draggableId={card.id} index={card.order}>
-			{(provided) => (
+			{(provided, snapshot) => (
 				<article
-					className='rounded-lg border border-surface-300 bg-white p-3 shadow-sm'
+					className={`p-3 rounded-lg border  ${snapshot.isDragging ? "bg-blue-50 border-primary  shadow-lg" : "bg-white border-surface-300  shadow-sm"}`}
 					{...provided.draggableProps}
 					{...provided.dragHandleProps}
 					ref={provided.innerRef}

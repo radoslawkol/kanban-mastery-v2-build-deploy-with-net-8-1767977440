@@ -19,9 +19,9 @@ export default function BoardColumn({ column }: BoardColumnProps) {
 			</header>
 
 			<Droppable droppableId={column.id}>
-				{(provided) => (
+				{(provided, snapshot) => (
 					<div
-						className='space-y-3'
+						className={`space-y-3 transition-colors delay-200 ${snapshot.isDraggingOver ? "bg-gray-100" : ""}`}
 						ref={provided.innerRef}
 						{...provided.droppableProps}
 					>
