@@ -30,3 +30,12 @@ export type BoardDetail = {
 	name: string;
 	columns: BoardColumn[];
 };
+
+export type InviteBoardMemberRequest = {
+	boardId: string;
+	email: string;
+};
+
+export type InviteBoardMemberResponse = {
+	message: string;
+};

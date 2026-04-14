@@ -1,12 +1,19 @@
 import { Droppable } from "@hello-pangea/dnd";
 import type { BoardColumn } from "../../types/board";
 import BoardCardItem from "./BoardCardItem";
+import BoardColumnCreateCard from "./BoardColumnCreateCard";
 
 type BoardColumnProps = {
 	column: BoardColumn;
+	onCreateCard: (title: string) => Promise<void>;
+	isCreatingCard?: boolean;
 };
 
-export default function BoardColumn({ column }: BoardColumnProps) {
+export default function BoardColumn({
+	column,
+	onCreateCard,
+	isCreatingCard = false,
+}: BoardColumnProps) {
 	return (
 		<section className='flex flex-col w-72 shrink-0 rounded-xl border border-surface-300 bg-surface-50 p-4'>
 			<header className='mb-4 flex items-center justify-between'>
@@ -37,6 +44,11 @@ export default function BoardColumn({ column }: BoardColumnProps) {
 					</div>
 				)}
 			</Droppable>
+
+			<BoardColumnCreateCard
+				onCreateCard={onCreateCard}
+				isCreatingCard={isCreatingCard}
+			/>
 		</section>
 	);
 }

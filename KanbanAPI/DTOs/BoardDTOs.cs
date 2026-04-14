@@ -5,7 +5,7 @@ namespace KanbanAPI.DTOs
 	public record UserBoardResponse(Guid Id, string Name);
 	public record UpdateBoardRequest(string Name);
 	public record UpdateBoardResponse(Guid Id, string Name);
-	public record AddBoardMemberRequest(string UserId);
+	public record AddBoardMemberRequest(string Email);
 	public record CreateColumnRequest(string Name, int? Position);
 	public record UpdateColumnRequest(string Name);
 	public record CreateColumnResponse(Guid Id, string Name, int Order, Guid BoardId);

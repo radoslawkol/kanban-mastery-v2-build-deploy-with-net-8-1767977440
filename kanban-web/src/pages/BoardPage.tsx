@@ -1,9 +1,11 @@
 import { Link, useParams } from "react-router-dom";
 import { useBoardByIdQuery } from "../hooks/useBoardByIdQuery";
 import { useUpdateCardMutation } from "../hooks/useUpdateCardMutation";
+import { useCreateCardMutation } from "../hooks/useCreateCardMutation";
 import ErrorMessage from "../components/ErrorMessage";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 import BoardColumn from "../components/board/BoardColumn";
+import BoardInviteModal from "../components/board/BoardInviteModal";
 import PageContainer from "../components/ui/PageContainer";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { useState, useEffect } from "react";
@@ -12,11 +14,15 @@ export default function BoardPage() {
 	const { boardId } = useParams();
 	const boardQuery = useBoardByIdQuery(boardId);
 	const updateCardOrderMutation = useUpdateCardMutation();
+	const createCardMutation = useCreateCardMutation();
 	const boardLoadError = extractApiErrorMessage(
 		boardQuery.error,
 		"We could not load this board. Please try again.",
 	);
 	const [columns, setColumns] = useState(boardQuery.data?.columns);
+	const [creatingCardInColumnId, setCreatingCardInColumnId] = useState<
+		string | null
+	>(null);
 
 	useEffect(() => {
 		if (boardQuery.data?.columns) {
@@ -126,6 +132,49 @@ export default function BoardPage() {
 		}
 	};
 
+	const handleCreateCard = async (columnId: string, title: string) => {
+		if (!boardId) {
+			throw new Error("Missing board id.");
+		}
+
+		setCreatingCardInColumnId(columnId);
+
+		try {
+			const createdCard = await createCardMutation.mutateAsync({
+				boardId,
+				title,
+				columnId,
+			});
+
+			setColumns((previousColumns) => {
+				if (!previousColumns) {
+					return previousColumns;
+				}
+
+				return previousColumns.map((column) => {
+					if (column.id !== columnId) {
+						return column;
+					}
+
+					return {
+						...column,
+						cards: [
+							...column.cards,
+							{
+								id: createdCard.id,
+								title: createdCard.title,
+								description: createdCard.description,
+								order: createdCard.order,
+							},
+						],
+					};
+				});
+			});
+		} finally {
+			setCreatingCardInColumnId(null);
+		}
+	};
+
 	return (
 		<PageContainer>
 			<div className='mb-6 flex items-center justify-between gap-4'>
@@ -135,12 +184,15 @@ export default function BoardPage() {
 						Board id: {board.id}
 					</p>
 				</div>
-				<Link
-					to='/dashboard'
-					className='rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-ink-700 transition hover:border-primary-600 hover:text-primary'
-				>
-					Back to dashboard
-				</Link>
+				<div className='flex items-center gap-3'>
+					<BoardInviteModal boardId={board.id} />
+					<Link
+						to='/dashboard'
+						className='rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-ink-700 transition hover:border-primary-600 hover:text-primary'
+					>
+						Back to dashboard
+					</Link>
+				</div>
 			</div>
 
 			<DragDropContext onDragEnd={(result) => handleOnDragEnd(result)}>
@@ -151,7 +203,17 @@ export default function BoardPage() {
 				) : (
 					<div className='flex gap-5 overflow-x-auto pb-2'>
 						{columns?.map((column) => (
-							<BoardColumn key={column.id} column={column} />
+							<BoardColumn
+								key={column.id}
+								column={column}
+								onCreateCard={(title) =>
+									handleCreateCard(column.id, title)
+								}
+								isCreatingCard={
+									creatingCardInColumnId === column.id &&
+									createCardMutation.isPending
+								}
+							/>
 						))}
 					</div>
 				)}
