@@ -84,7 +84,7 @@ app.MapGet("/api/users/me", async (ClaimsPrincipal user, IUserService userServic
 }).RequireAuthorization();
 
 app.MapPost("/api/boards/{boardId}/members", async (
-	Guid boardId, AddBoardMemberRequest addBoardMemberRequest, HttpContext httpContext, IBoardService boardService, IAuthorizationService authorizationService) =>
+	Guid boardId, AddBoardMemberRequest addBoardMemberRequest, HttpContext httpContext, IBoardService boardService, IAuthorizationService authorizationService, IUserService userService) =>
 {
 	try
 	{
@@ -97,7 +97,11 @@ app.MapPost("/api/boards/{boardId}/members", async (
 		if (!authorizationResult.Succeeded)
 			return Results.Forbid();
 
-		await boardService.AddMemberAsync(boardId, addBoardMemberRequest.UserId, BoardRole.Member, userId);
+		var userToInvite = await userService.GetUserByEmailAsync(addBoardMemberRequest.Email);
+		if (userToInvite is null)
+			return Results.NotFound(new { message = "User not found" });
+
+		await boardService.AddMemberAsync(boardId, userToInvite.Id, BoardRole.Member, userId);
 
 		return Results.Ok(new { message = "Member added successfully" });
 	}
@@ -163,7 +167,7 @@ app.MapGet("/api/boards/{boardId}",
 
 		return TypedResults.Ok(response);
 	}
-	catch (ForbiddenException ex)
+	catch (ForbiddenException)
 	{
 		return Results.Forbid();
 	}

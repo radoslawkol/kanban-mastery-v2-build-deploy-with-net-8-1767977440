@@ -1,6 +1,7 @@
 ﻿using KanbanAPI.Data;
 using KanbanAPI.Exceptions;
 using KanbanAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace KanbanAPI.Services
 {
@@ -23,6 +24,17 @@ namespace KanbanAPI.Services
 			}
 
 			return appUser;
+		}
+
+		public async Task<ApplicationUser?> GetUserByEmailAsync(string email)
+		{
+			if (string.IsNullOrWhiteSpace(email))
+			{
+				throw new ArgumentException("Email cannot be empty or whitespace.", nameof(email));
+			}
+
+			var normalizedEmail = email.Trim().ToUpperInvariant();
+			return await _context.Users.FirstOrDefaultAsync(user => user.NormalizedEmail == normalizedEmail);
 		}
 	}
 }
