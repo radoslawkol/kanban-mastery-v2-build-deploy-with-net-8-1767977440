@@ -1,9 +1,23 @@
 import { Droppable } from "@hello-pangea/dnd";
-import { useState } from "react";
-import type { SubmitEvent } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { BoardColumn } from "../../types/board";
 import { extractApiErrorMessage } from "../../lib/extractApiErrorMessage";
 import BoardCardItem from "./BoardCardItem";
+import z from "zod";
+import ErrorMessage from "../ErrorMessage";
+import FormButton from "../FormButton";
+
+const CreateCardSchema = z.object({
+	title: z
+		.string()
+		.trim()
+		.min(1, "Card title is required.")
+		.max(120, "Card title cannot be longer than 120 characters."),
+});
+
+type CreateCardFormState = {
+	error: string | null;
+};
 
 type BoardColumnProps = {
 	column: BoardColumn;
@@ -18,33 +32,47 @@ export default function BoardColumn({
 }: BoardColumnProps) {
 	const [isFormVisible, setIsFormVisible] = useState(false);
 	const [newCardTitle, setNewCardTitle] = useState("");
-	const [createCardError, setCreateCardError] = useState<string | null>(null);
+	const formRef = useRef<HTMLFormElement | null>(null);
 
-	const handleCreateCardSubmit = async (
-		event: SubmitEvent<HTMLFormElement>,
-	) => {
-		event.preventDefault();
-		const trimmedTitle = newCardTitle.trim();
+	const createCardAction = async (
+		_previousState: CreateCardFormState,
+		formData: FormData,
+	): Promise<CreateCardFormState> => {
+		const parsed = CreateCardSchema.safeParse({
+			title: formData.get("title"),
+		});
 
-		if (!trimmedTitle) {
-			return;
+		if (!parsed.success) {
+			return {
+				error:
+					parsed.error.issues[0]?.message ??
+					"Please provide a valid card title.",
+			};
 		}
 
-		setCreateCardError(null);
-
 		try {
-			await onCreateCard(trimmedTitle);
+			await onCreateCard(parsed.data.title);
+			formRef.current?.reset();
 			setNewCardTitle("");
 			setIsFormVisible(false);
+			return { error: null };
 		} catch (error) {
-			setCreateCardError(
-				extractApiErrorMessage(
+			return {
+				error: extractApiErrorMessage(
 					error,
 					"We could not create this card. Please try again.",
 				),
-			);
+			};
 		}
 	};
+
+	const [formState, submitCreateCardAction, isPending] = useActionState<
+		CreateCardFormState,
+		FormData
+	>(createCardAction, { error: null });
+	const isSubmitting = isPending || isCreatingCard;
+	const isTitleEmpty = newCardTitle.trim().length === 0;
+	const shouldShowError = Boolean(formState.error) && isTitleEmpty;
 
 	return (
 		<section className='flex flex-col w-72 shrink-0 rounded-xl border border-surface-300 bg-surface-50 p-4'>
@@ -79,43 +107,44 @@ export default function BoardColumn({
 
 			{isFormVisible ? (
 				<form
-					onSubmit={handleCreateCardSubmit}
+					ref={formRef}
+					action={submitCreateCardAction}
 					className='mt-4 flex flex-col gap-2'
 				>
 					<input
+						name='title'
 						type='text'
 						value={newCardTitle}
-						onChange={(event) => {
-							setNewCardTitle(event.target.value);
-							if (createCardError) {
-								setCreateCardError(null);
-							}
-						}}
 						placeholder='Card title'
 						className='w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-200'
-						disabled={isCreatingCard}
-						required
+						disabled={isSubmitting}
+						onChange={(event) => {
+							setNewCardTitle(event.target.value);
+						}}
 						autoFocus
 					/>
-					<button
-						type='submit'
-						disabled={isCreatingCard || !newCardTitle.trim()}
+					{shouldShowError ? (
+						<ErrorMessage message={formState.error!}></ErrorMessage>
+					) : null}
+					<FormButton
+						isLoading={isSubmitting}
+						loadingText='Creating...'
 						className='rounded-lg border border-primary bg-primary px-3 py-2 text-sm font-medium text-white transition hover:bg-primary-700 hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60'
 					>
-						{isCreatingCard ? "Creating..." : "Create Card"}
-					</button>
-					{createCardError ? (
-						<p className='text-sm text-danger'>{createCardError}</p>
-					) : null}
+						Create Card
+					</FormButton>
 				</form>
 			) : (
-				<button
+				<FormButton
 					type='button'
-					onClick={() => setIsFormVisible(true)}
+					onClick={() => {
+						setNewCardTitle("");
+						setIsFormVisible(true);
+					}}
 					className='mt-4 rounded-lg border border-dashed border-surface-400 bg-white px-3 py-2 text-sm font-medium text-ink-700 transition hover:border-primary-600 hover:text-primary hover:cursor-pointer'
 				>
 					Create Card
-				</button>
+				</FormButton>
 			)}
 		</section>
 	);
