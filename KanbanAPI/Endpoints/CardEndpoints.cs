@@ -71,7 +71,7 @@ namespace KanbanAPI.Endpoints
 				if (!authorizationResult.Succeeded)
 					return Results.Forbid();
 
-				var card = await cardService.UpdateCardAsync(boardId, cardId, request.Title, request.Description, request.ColumnId);
+				var card = await cardService.UpdateCardAsync(boardId, cardId, request.Title, request.Description, request.ColumnId, request.Order);
 				var response = new UpdateCardResponse(card.Id, card.Title, card.Description, card.ColumnId, card.Order);
 
 				return Results.Ok(response);
