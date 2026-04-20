@@ -2,27 +2,45 @@ import { Droppable } from "@hello-pangea/dnd";
 import type { BoardColumn } from "../../types/board";
 import BoardCardItem from "./BoardCardItem";
 import BoardColumnCreateCard from "./BoardColumnCreateCard";
+import EditColumnModal from "./EditColumnModal";
+import DeleteColumnModal from "./DeleteColumnModal";
 
 type BoardColumnProps = {
 	column: BoardColumn;
+	boardId: string;
 	onCreateCard: (title: string) => Promise<void>;
 	isCreatingCard?: boolean;
 };
 
 export default function BoardColumn({
 	column,
+	boardId,
 	onCreateCard,
 	isCreatingCard = false,
 }: BoardColumnProps) {
 	return (
 		<section className='flex flex-col w-72 shrink-0 rounded-xl border border-surface-300 bg-surface-50 p-4'>
 			<header className='mb-4 flex items-center justify-between'>
-				<h2 className='text-lg font-semibold text-ink-900'>
-					{column.name}
-				</h2>
-				<span className='rounded-full bg-white px-2 py-1 text-xs text-ink-600'>
-					{column.cards.length}
-				</span>
+				<div className='flex items-center gap-2'>
+					<h2 className='text-lg font-semibold text-ink-900'>
+						{column.name}
+					</h2>
+					<span className='rounded-full bg-white px-2 py-1 text-xs text-ink-600'>
+						{column.cards.length}
+					</span>
+				</div>
+				<div className='flex items-center gap-1'>
+					<EditColumnModal
+						boardId={boardId}
+						columnId={column.id}
+						initialName={column.name}
+					/>
+					<DeleteColumnModal
+						boardId={boardId}
+						columnId={column.id}
+						columnName={column.name}
+					/>
+				</div>
 			</header>
 			{column.cards.length === 0 ? (
 				<p className='mt-3 rounded-lg border border-dashed border-surface-300 p-3 text-sm text-ink-600'>

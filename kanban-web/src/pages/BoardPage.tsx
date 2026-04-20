@@ -209,6 +209,7 @@ export default function BoardPage() {
 							<BoardColumn
 								key={column.id}
 								column={column}
+								boardId={board.id}
 								onCreateCard={(title) =>
 									handleCreateCard(column.id, title)
 								}
