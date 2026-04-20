@@ -6,6 +6,7 @@ import ErrorMessage from "../components/ErrorMessage";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 import BoardColumn from "../components/board/BoardColumn";
 import BoardInviteModal from "../components/board/BoardInviteModal";
+import CreateColumnModal from "../components/board/CreateColumnModal";
 import PageContainer from "../components/ui/PageContainer";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { useState, useEffect } from "react";
@@ -185,6 +186,7 @@ export default function BoardPage() {
 					</p>
 				</div>
 				<div className='flex items-center gap-3'>
+					<CreateColumnModal boardId={board.id} />
 					<BoardInviteModal boardId={board.id} />
 					<Link
 						to='/dashboard'
@@ -197,8 +199,9 @@ export default function BoardPage() {
 
 			<DragDropContext onDragEnd={(result) => handleOnDragEnd(result)}>
 				{board.columns.length === 0 ? (
-					<div className='rounded-xl border border-dashed border-surface-300 p-5 text-sm text-ink-700'>
-						This board has no columns yet.
+					<div className='rounded-xl border border-dashed border-surface-300 p-5 text-sm text-ink-700 flex items-center gap-3'>
+						<span>This board has no columns yet.</span>
+						<CreateColumnModal boardId={board.id} />
 					</div>
 				) : (
 					<div className='flex gap-5 overflow-x-auto pb-2'>
@@ -215,6 +218,9 @@ export default function BoardPage() {
 								}
 							/>
 						))}
+						<div className='flex shrink-0 items-center'>
+							<CreateColumnModal boardId={board.id} />
+						</div>
 					</div>
 				)}
 			</DragDropContext>

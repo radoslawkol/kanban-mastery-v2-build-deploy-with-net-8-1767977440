@@ -31,6 +31,37 @@ export type BoardDetail = {
 	columns: BoardColumn[];
 };
 
+export type CreateColumnRequest = {
+	boardId: string;
+	name: string;
+	position?: number;
+};
+
+export type CreateColumnResponse = {
+	id: string;
+	name: string;
+	order: number;
+	boardId: string;
+};
+
+export type UpdateColumnRequest = {
+	boardId: string;
+	columnId: string;
+	name: string;
+};
+
+export type UpdateColumnResponse = {
+	id: string;
+	name: string;
+	order: number;
+	boardId: string;
+};
+
+export type DeleteColumnRequest = {
+	boardId: string;
+	columnId: string;
+};
+
 export type InviteBoardMemberRequest = {
 	boardId: string;
 	email: string;
