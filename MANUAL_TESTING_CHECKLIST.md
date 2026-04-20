@@ -152,6 +152,24 @@ Note: Column remove right-away (don't need to refresh)
 - Visual feedback on creation: Card visible right-away
 - Any lag: No
 
+### 4.2 Edit Card
+
+- **Test**: Edit an existing card
+
+**Original Title:** **\*\***\_\_\_\_**\*\***  
+**New Title:** **\*\***\_\_\_\_**\*\***  
+**Fields Changed:** **\*\***\_\_\_\_**\*\***  
+**Update Successful:** Yes / No  
+**Real-time update visible:** Yes / No
+
+### 4.3 Delete Card
+
+- **Test**: Delete a card
+
+**Card Deleted:** **\*\***\_\_\_\_**\*\***  
+**Confirmation required:** Yes / No  
+**Removed from UI:** Yes / No
+
 ---
 
 ## 5. DRAG-AND-DROP FUNCTIONALITY
