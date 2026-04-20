@@ -23,7 +23,7 @@ namespace KanbanAPI.Services
 				.FirstOrDefaultAsync(c => c.Id == columnId && c.BoardId == boardId);
 
 			if (column is null)
-				throw new NotFoundException("Column not found.");
+				throw new ArgumentException("Target column not found or does not belong to this board.");
 
 			var nextOrder = await _context.Cards
 				.Where(c => c.ColumnId == columnId)
@@ -61,7 +61,7 @@ namespace KanbanAPI.Services
 				.AnyAsync(c => c.Id == columnId && c.BoardId == boardId);
 
 			if (!targetColumnExists)
-				throw new NotFoundException("Column not found.");
+				throw new ArgumentException("Target column not found or does not belong to this board.");
 
 			if (order < 0)
 			{
@@ -101,7 +101,7 @@ namespace KanbanAPI.Services
 			if (card is null)
 				return null;
 
-			card.AssignedToUserId = userId;
+			card.AssignedToUserId = string.IsNullOrEmpty(userId) ? null : userId;
 			card.ModifiedOn = DateTime.UtcNow;
 
 			await _context.SaveChangesAsync();
