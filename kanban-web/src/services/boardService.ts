@@ -1,6 +1,8 @@
 import apiClient from "./apiClient";
 import type {
 	BoardDetail,
+	CreateBoardRequest,
+	CreateBoardResponse,
 	InviteBoardMemberRequest,
 	InviteBoardMemberResponse,
 	UserBoard,
@@ -13,6 +15,14 @@ export async function getCurrentUserBoards() {
 
 export async function getBoardById(boardId: string) {
 	const response = await apiClient.get<BoardDetail>(`/api/boards/${boardId}`);
+	return response.data;
+}
+
+export async function createBoard(request: CreateBoardRequest) {
+	const { boardName } = request;
+	const response = await apiClient.post<CreateBoardResponse>("/api/boards/", {
+		boardName,
+	});
 	return response.data;
 }
 
