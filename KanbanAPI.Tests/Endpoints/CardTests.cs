@@ -77,7 +77,7 @@ namespace KanbanAPI.Tests.Endpoints
 			Assert.NotNull(createdCard);
 
 			// Act
-			var updateCardRequest = new UpdateCardRequest("Task Updated", "Description Updated", column.Id);
+			var updateCardRequest = new UpdateCardRequest("Task Updated", "Description Updated", column.Id, 0);
 			var response = await memberClient.PutAsJsonAsync(
 				$"/api/boards/{board.Id}/cards/{createdCard.Id}",
 				updateCardRequest);
@@ -114,7 +114,7 @@ namespace KanbanAPI.Tests.Endpoints
 
 			var response = await ownerClient.PutAsJsonAsync(
 				$"/api/boards/{board.Id}/cards/{createdCard.Id}",
-				new UpdateCardRequest("Task Updated", "Moved", toColumn.Id));
+				new UpdateCardRequest("Task Updated", "Moved", toColumn.Id, 0));
 
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 			var updatedCard = await response.Content.ReadFromJsonAsync<UpdateCardResponse>();
@@ -205,7 +205,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var nonMemberClient = await CreateAuthenticatedClientAsync("nonmember-update-card@example.com", "Test@123");
 			var response = await nonMemberClient.PutAsJsonAsync(
 				$"/api/boards/{board.Id}/cards/{createdCard.Id}",
-				new UpdateCardRequest("Task Updated", "Moved", column.Id));
+				new UpdateCardRequest("Task Updated", "Moved", column.Id, 0));
 
 			Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 		}
