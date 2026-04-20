@@ -2,6 +2,7 @@ import { useUserBoardsQuery } from "../hooks/useUserBoardsQuery";
 import BoardCardList from "../components/BoardCardList";
 import DashboardWrapper from "../components/DashboardWrapper";
 import ErrorMessage from "../components/ErrorMessage";
+import CreateBoardModal from "../components/board/CreateBoardModal";
 import { extractApiErrorMessage } from "../lib/extractApiErrorMessage";
 
 export default function DashboardPage() {
@@ -33,14 +34,26 @@ export default function DashboardPage() {
 			title='Dashboard'
 			subtitle='Your home base for all boards.'
 		>
-			{boards.length === 0 ? (
+			<div className='mt-6 flex items-center justify-between'>
+				<div>
+					{boards.length === 0 ? (
+						<p className='text-ink-700'>
+							No boards yet. Create your first board to get
+							started.
+						</p>
+					) : null}
+				</div>
+				<CreateBoardModal />
+			</div>
+
+			{boards.length > 0 ? (
+				<BoardCardList boards={boards} />
+			) : (
 				<div className='mt-6 rounded-xl border border-dashed border-surface-300 bg-surface-50 p-6'>
 					<p className='text-ink-700'>
 						No boards yet. Create your first board to get started.
 					</p>
 				</div>
-			) : (
-				<BoardCardList boards={boards} />
 			)}
 		</DashboardWrapper>
 	);
