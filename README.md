@@ -1,59 +1,128 @@
-# GenericTemplate
+# Kanban Board Application
 
-**[Insert a brief description of your application here. Describe its purpose, functionality, etc.]**
+A modern, full-stack collaborative task management application built with **React** (frontend) and **.NET** (backend). Organize your work efficiently with intuitive kanban boards featuring real-time task management, team collaboration, and role-based access control.
 
 ## 🌐 Demo
 
 [Your Demo Link Here](http://replace-with-your-link.com)
 
 **Demo Credentials (If applicable):**
-- **Username:** ReplaceThisWithUsername
-- **Password:** ReplaceThisWithPassword
+
+- **Username:** alek@example.pl
+- **Password:** 12345678Ab!
 
 ## 📖 About this Software
 
-Provide a comprehensive explanation of your software here. Dive into its core functionalities, why you opted to create it, its target users, and its value proposition.
+This Kanban Board application provides teams with a powerful yet intuitive platform to visualize, organize, and manage their work. Whether you're managing software development sprints, marketing campaigns, or any collaborative project, this application streamlines task organization with drag-and-drop functionality, real-time updates, and comprehensive access control.
 
-### Features:
+The application is built with modern web technologies, following best practices for security, performance, and user experience. It supports multi-user collaboration with role-based permissions (Board Owner, Board Member) and maintains data integrity through robust backend validation and database constraints.
 
-1. **Feature 1:** Brief description.
-2. **Feature 2:** Brief description.
-3. **...:** Continue listing out the core features of your application.
+### Key Features:
 
-## 🖼️ Screenshots
+1. **Board Management:** Create and manage multiple kanban boards with customizable workflows. Each board serves as a container for organizing related tasks and team collaboration.
 
-To give you a visual overview of the application, here are some screenshots:
+2. **Drag-and-Drop Interface:** Intuitive drag-and-drop functionality powered by react-beautiful-dnd for seamless task movement between columns. Users can instantly reorganize priorities and workflow states.
 
-### [Feature or Page Name]
-![Description of Image](http://link-to-your-image.com/image1.png)
+3. **Columns & Cards:** Organize work into customizable columns representing different workflow stages (e.g., "To Do", "In Progress", "Done"). Create, update, and manage individual task cards within each column.
 
-### [Another Feature or Page Name]
-![Description of Image](http://link-to-your-image.com/image2.png)
+4. **Team Collaboration:** Invite team members to boards and assign tasks. Assign multiple team members to individual cards for better collaboration and accountability.
 
-Add more screenshots as needed. Ensure to replace placeholders with appropriate links and descriptions.
+5. **Role-Based Access Control:** Manage board permissions with two primary roles:
+    - **Board Owner:** Full control over board settings, member management, and all content
+    - **Board Member:** Can view and manage cards and columns within their boards
 
-## ⚠️ Warning
+6. **User Authentication & Authorization:** Secure authentication system with token-based API endpoints. Custom authorization handlers ensure role-based access to protected resources.
 
-**Changing the repository name is NOT allowed.** Renaming this repository can cause issues with the peer review feature integrated into this template. 
+7. **Responsive Design:** Beautiful, responsive UI built with React and TailwindCSS that works seamlessly across desktop, tablet, and mobile devices.
 
-If you're planning to present this project to potential employers or external parties:
+## 🏗️ Tech Stack
 
-1. Ensure that all functionalities work as expected.
-2. **Remove this warning section** to maintain a clean and professional look.
+### Frontend
 
-## ✅ Best Practices to Follow
+- **Framework:** React 19 with TypeScript
+- **Build Tool:** Vite
+- **Styling:** TailwindCSS
+- **State Management:** React Query (@tanstack/react-query)
+- **Routing:** React Router v7
+- **Form Handling:** React Hook Form with Zod validation
+- **Drag & Drop:** @hello-pangea/dnd
+- **HTTP Client:** Axios
+- **Notifications:** React Toastify
+- **Modal Management:** React Modal
 
-To ensure high-quality projects, we recommend adhering to the following best practices:
+### Backend
 
-1. **Gitflow:** Always use pull requests (PRs) for introducing new features or changes. This helps in maintaining a clean commit history and enables peer reviews.
-2. **Commit Formatting:** Follow a commit convention such as Git convention or [Conventional Commits](https://www.conventionalcommits.org/). It makes the commit history readable and easy to understand.
-3. **Test Coverage:** Aim for a minimum test coverage of 80-90%. This ensures that the majority of your code is tested, reducing potential bugs and regressions.
-4. **Comprehensive README:** A well-documented README provides clarity about the project's purpose, usage, and maintenance.
-5. **Live Demo:** Always provide a live demo with login credentials (if applicable). It offers a hands-on experience of your application to users or potential employers.
-6. **Continuous Integration (CI):** Implement CI to automatically build and test your project. This ensures that your code is always in a deployable state.
-7. **Continuous Deployment (CD):** While CI is a must, having CD is a nice-to-have feature. It automates the deployment process, ensuring that the latest changes are instantly accessible to users.
-8. **Clean Code:** Avoid clutter or "junk" in your code. Ensure that your codebase is organized, commented when necessary, and follows established coding standards.
+- **Framework:** ASP.NET Core Minimal API
+- **Database:** SQL Server with Entity Framework Core
+- **Authentication:** ASP.NET Identity
+- **Authorization:** Custom policy-based authorization handlers
 
----
+## 📁 Project Structure
 
-Happy coding! 💻
+```
+Kanban/
+├── KanbanAPI/                 # Backend (.NET API)
+│   ├── Models/               # Database models (Board, Card, Column, User)
+│   ├── Data/                 # Entity Framework DbContext
+│   ├── DTOs/                 # Data Transfer Objects
+│   ├── Endpoints/            # API endpoints (BoardEndpoints, CardEndpoints, etc.)
+│   ├── Services/             # Business logic services
+│   ├── Authorization/        # Custom authorization handlers & policies
+│   ├── Migrations/           # Entity Framework migrations
+│   ├── Exceptions/           # Custom exception classes
+│   └── Program.cs            # Application configuration
+├── kanban-web/               # Frontend (React + TypeScript)
+│   ├── src/
+│   │   ├── components/       # Reusable React components
+│   │   ├── pages/            # Page components
+│   │   ├── services/         # API service layer
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── types/            # TypeScript type definitions
+│   │   ├── lib/              # Utility functions
+│   │   └── App.tsx           # Root component
+│   └── vite.config.ts        # Vite configuration
+├── KanbanAPI.Tests/          # Unit tests for backend
+└── README.md                 # Documentation
+```
+
+## 🖼️ API Endpoints
+
+### Authentication
+
+- `POST /api/identity/login` - User login
+- `POST /api/identity/register` - User registration
+- `POST /api/identity/logout` - User logout
+
+### Boards
+
+- `GET /api/boards` - Get all user's boards
+- `POST /api/boards` - Create new board
+- `GET /api/boards/{id}` - Get board details
+- `PUT /api/boards/{id}` - Update board
+- `DELETE /api/boards/{id}` - Delete board
+- `POST /api/boards/{id}/members` - Add board member
+- `DELETE /api/boards/{id}/members/{userId}` - Remove board member
+
+### Columns
+
+- `GET /api/columns/{boardId}` - Get columns for board
+- `POST /api/columns` - Create column
+- `PUT /api/columns/{id}` - Update column
+- `DELETE /api/columns/{id}` - Delete column
+
+### Cards
+
+- `GET /api/cards/{columnId}` - Get cards in column
+- `POST /api/cards` - Create card
+- `PUT /api/cards/{id}` - Update card
+- `DELETE /api/cards/{id}` - Delete card
+- `POST /api/cards/{id}/assign` - Assign user to card
+
+## 📊 Test Coverage
+
+View the latest coverage report in the `coveragereport/` directory. Generate a new report with:
+
+```bash
+cd KanbanAPI.Tests
+dotnet test /p:CollectCoverage=true
+```
