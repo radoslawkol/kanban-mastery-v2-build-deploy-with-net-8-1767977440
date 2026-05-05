@@ -6,7 +6,7 @@ A modern, full-stack collaborative task management application built with **Reac
 
 [Your Demo Link Here](http://replace-with-your-link.com)
 
-**Demo Credentials (If applicable):**
+**Demo Credentials:**
 
 - **Username:** alek@example.pl
 - **Password:** 12345678Ab!
@@ -34,6 +34,29 @@ The application is built with modern web technologies, following best practices 
 6. **User Authentication & Authorization:** Secure authentication system with token-based API endpoints. Custom authorization handlers ensure role-based access to protected resources.
 
 7. **Responsive Design:** Beautiful, responsive UI built with React and TailwindCSS that works seamlessly across desktop, tablet, and mobile devices.
+
+## Screenshots
+#### Register form
+<img width="1494" height="919" alt="image" src="https://github.com/user-attachments/assets/67dace2a-1372-4de0-9ecb-e4cc7f36a807" />
+
+#### Login form
+<img width="1496" height="889" alt="image" src="https://github.com/user-attachments/assets/ab3b4340-2458-4cf0-ae67-eab4500c1c3f" />
+
+#### Dashboard Page
+<img width="1499" height="483" alt="image" src="https://github.com/user-attachments/assets/d52dcbae-4ead-4a6f-b419-20bdb65a3c13" />
+
+##### Kanban Board Page
+<img width="1186" height="596" alt="image" src="https://github.com/user-attachments/assets/e6bd1080-7fc2-4ecb-877c-603cb78c5933" />
+
+#### Invite Board Members Modal
+<img width="1497" height="738" alt="image" src="https://github.com/user-attachments/assets/0bfb6005-8365-4b0d-a386-d6e791fcd8a5" />
+
+#### Add New Column
+<img width="1492" height="696" alt="image" src="https://github.com/user-attachments/assets/f08c2d9d-a819-4dc2-bff0-3da322e88772" />
+
+#### Delete Confirmation Modal
+<img width="1507" height="731" alt="image" src="https://github.com/user-attachments/assets/c90e63f2-25e3-4cf6-8ac1-0757126a992c" />
+
 
 ## 🏗️ Tech Stack
 
