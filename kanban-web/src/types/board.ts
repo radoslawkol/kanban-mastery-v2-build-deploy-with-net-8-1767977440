@@ -31,6 +31,15 @@ export type BoardDetail = {
 	columns: BoardColumn[];
 };
 
+export type CreateBoardRequest = {
+	boardName: string;
+};
+
+export type CreateBoardResponse = {
+	id: string;
+	boardName: string;
+};
+
 export type InviteBoardMemberRequest = {
 	boardId: string;
 	email: string;
