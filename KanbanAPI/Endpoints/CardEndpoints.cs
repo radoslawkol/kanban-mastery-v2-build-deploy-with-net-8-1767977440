@@ -49,6 +49,10 @@ namespace KanbanAPI.Endpoints
 			}
 			catch (NotFoundException ex)
 			{
+				// Check if it's a column validation error (cross-board) or actual not found
+				if (ex.Message.Contains("does not belong to this board"))
+					return Results.BadRequest(new { message = ex.Message });
+				
 				return Results.NotFound(new { message = ex.Message });
 			}
 		}
@@ -82,6 +86,10 @@ namespace KanbanAPI.Endpoints
 			}
 			catch (NotFoundException ex)
 			{
+				// Check if it's a column validation error (cross-board) or actual not found
+				if (ex.Message.Contains("does not belong to this board"))
+					return Results.BadRequest(new { message = ex.Message });
+				
 				return Results.NotFound(new { message = ex.Message });
 			}
 		}
