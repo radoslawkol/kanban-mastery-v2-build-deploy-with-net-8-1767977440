@@ -121,12 +121,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var memberEmail = "member@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 
-			// Get the member's user ID from database
-			using var db = CreateDbContext();
-			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			Assert.NotNull(memberUser);
-
-			var addMemberRequest = new AddBoardMemberRequest(memberUser.Id);
+			var addMemberRequest = new AddBoardMemberRequest(memberEmail);
 
 			// Act
 			var response = await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addMemberRequest);
@@ -135,6 +130,9 @@ namespace KanbanAPI.Tests.Endpoints
 			Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
 			// Verify member was added to database
+			using var db = CreateDbContext();
+			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
+			Assert.NotNull(memberUser);
 			var memberRecord = await db.BoardMembers
 				.SingleOrDefaultAsync(bm => bm.BoardId == board.Id && bm.UserId == memberUser.Id);
 			Assert.NotNull(memberRecord);
@@ -160,21 +158,14 @@ namespace KanbanAPI.Tests.Endpoints
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 			await _client.PostAsJsonAsync("/register", new { email = nonOwnerEmail, password = "Test@123" });
 
-			// Get user IDs from database
-			using var db = CreateDbContext();
-			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			var nonOwnerUser = await db.Users.SingleOrDefaultAsync(u => u.Email == nonOwnerEmail);
-			Assert.NotNull(memberUser);
-			Assert.NotNull(nonOwnerUser);
-
 			// Add non-owner as a regular member to the board
-			var addNonOwnerRequest = new AddBoardMemberRequest(nonOwnerUser.Id);
+			var addNonOwnerRequest = new AddBoardMemberRequest(nonOwnerEmail);
 			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addNonOwnerRequest);
 
 			// Create authenticated client for non-owner
 			var nonOwnerClient = await CreateAuthenticatedClientAsync(nonOwnerEmail, "Test@123");
 
-			var addMemberRequest = new AddBoardMemberRequest(memberUser.Id);
+			var addMemberRequest = new AddBoardMemberRequest(memberEmail);
 
 			// Act
 			var response = await nonOwnerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", addMemberRequest);
@@ -197,11 +188,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var memberEmail = "boardmember4@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 
-			using var db = CreateDbContext();
-			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			Assert.NotNull(memberUser);
-
-			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberUser.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberEmail));
 
 			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
 
@@ -251,11 +238,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var memberEmail = "member-columns-1@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 
-			using var db = CreateDbContext();
-			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			Assert.NotNull(member);
-
-			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(memberEmail));
 			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
 
 			// Act
@@ -298,11 +281,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var memberEmail = "member-update-col-1@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 
-			using var db = CreateDbContext();
-			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			Assert.NotNull(member);
-
-			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(memberEmail));
 			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
 
 			// Create a column first
@@ -365,7 +344,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var member = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
 			Assert.NotNull(member);
 
-			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(member.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{board.Id}/members", new AddBoardMemberRequest(memberEmail));
 			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
 
 			// Create a column first
@@ -608,11 +587,7 @@ namespace KanbanAPI.Tests.Endpoints
 			var memberEmail = "board-delete-member@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = memberEmail, password = "Test@123" });
 
-			using var db = CreateDbContext();
-			var memberUser = await db.Users.SingleOrDefaultAsync(u => u.Email == memberEmail);
-			Assert.NotNull(memberUser);
-
-			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberUser.Id));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(memberEmail));
 
 			var memberClient = await CreateAuthenticatedClientAsync(memberEmail, "Test@123");
 
@@ -636,20 +611,15 @@ namespace KanbanAPI.Tests.Endpoints
 			Assert.NotNull(createdBoard);
 
 			// Add multiple members
-			using var db = CreateDbContext();
 			var member1Email = "board-delete-member-1@example.com";
 			var member2Email = "board-delete-member-2@example.com";
 			await _client.PostAsJsonAsync("/register", new { email = member1Email, password = "Test@123" });
 			await _client.PostAsJsonAsync("/register", new { email = member2Email, password = "Test@123" });
 
-			var member1 = await db.Users.SingleOrDefaultAsync(u => u.Email == member1Email);
-			var member2 = await db.Users.SingleOrDefaultAsync(u => u.Email == member2Email);
-			Assert.NotNull(member1);
-			Assert.NotNull(member2);
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member1Email));
+			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member2Email));
 
-			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member1.Id));
-			await ownerClient.PostAsJsonAsync($"/api/boards/{createdBoard.Id}/members", new AddBoardMemberRequest(member2.Id));
-
+			using var db = CreateDbContext();
 			var membershipsBeforeDelete = await db.BoardMembers
 				.Where(bm => bm.BoardId == createdBoard.Id)
 				.CountAsync();

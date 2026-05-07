@@ -59,7 +59,7 @@ namespace KanbanAPI.Tests.Services
 			var done = await CreateColumnAsync(board.Id, "Done", 1);
 			var card = await _cardService.CreateCardAsync(board.Id, "Task 1", "Initial", todo.Id);
 
-			var updatedCard = await _cardService.UpdateCardAsync(board.Id, card.Id, "Task 1 Updated", "Moved", done.Id);
+			var updatedCard = await _cardService.UpdateCardAsync(board.Id, card.Id, "Task 1 Updated", "Moved", done.Id, 0);
 
 			Assert.Equal("Task 1 Updated", updatedCard.Title);
 			Assert.Equal("Moved", updatedCard.Description);
@@ -76,7 +76,7 @@ namespace KanbanAPI.Tests.Services
 			var card = await _cardService.CreateCardAsync(board1.Id, "Task", null, board1Column.Id);
 
 			await Assert.ThrowsAsync<NotFoundException>(() =>
-				_cardService.UpdateCardAsync(board1.Id, card.Id, "Task", null, board2Column.Id));
+				_cardService.UpdateCardAsync(board1.Id, card.Id, "Task", null, board2Column.Id, 0));
 		}
 
 		[Fact]
